@@ -151,6 +151,55 @@ class SequenceRunRepository:
 
     # --- Event operations ---
 
+    async def get_candidate_by_thread_id(
+        self, thread_id: str, provider: IntegrationProvider
+    ) -> SequenceRunCandidate | None:
+        stmt = (
+            select(SequenceRunCandidate)
+            .join(SequenceRunCandidateEvent)
+            .where(
+                SequenceRunCandidateEvent.external_thread_id == thread_id,
+                SequenceRunCandidateEvent.external_provider == provider,
+            )
+            .options(selectinload(SequenceRunCandidate.candidate))
+        )
+        result = await self._db.execute(stmt)
+        return result.scalars().first()
+
+    async def get_pending_scheduled_events(
+        self, sequence_run_candidate_id: int
+    ) -> list[SequenceRunCandidateEvent]:
+        stmt = (
+            select(SequenceRunCandidateEvent)
+            .where(
+                SequenceRunCandidateEvent.sequence_run_candidate_id
+                == sequence_run_candidate_id,
+                SequenceRunCandidateEvent.event_type == EventType.EMAIL_SCHEDULED,
+                SequenceRunCandidateEvent.external_schedule_id.isnot(None),
+            )
+        )
+        result = await self._db.execute(stmt)
+        return list(result.scalars().all())
+
+    async def has_event(
+        self,
+        sequence_run_candidate_id: int,
+        event_type: EventType,
+        external_message_id: str,
+    ) -> bool:
+        stmt = (
+            select(SequenceRunCandidateEvent.id)
+            .where(
+                SequenceRunCandidateEvent.sequence_run_candidate_id
+                == sequence_run_candidate_id,
+                SequenceRunCandidateEvent.event_type == event_type,
+                SequenceRunCandidateEvent.external_message_id == external_message_id,
+            )
+            .limit(1)
+        )
+        result = await self._db.execute(stmt)
+        return result.scalar_one_or_none() is not None
+
     async def add_event(
         self,
         sequence_run_candidate_id: int,
@@ -158,6 +207,7 @@ class SequenceRunRepository:
         step_order: int | None = None,
         external_message_id: str | None = None,
         external_schedule_id: str | None = None,
+        external_thread_id: str | None = None,
         external_provider: IntegrationProvider | None = None,
         extra: dict | None = None,
     ) -> SequenceRunCandidateEvent:
@@ -167,6 +217,7 @@ class SequenceRunRepository:
             step_order=step_order,
             external_message_id=external_message_id,
             external_schedule_id=external_schedule_id,
+            external_thread_id=external_thread_id,
             external_provider=external_provider,
             extra=extra,
         )

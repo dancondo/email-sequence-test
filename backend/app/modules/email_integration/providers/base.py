@@ -12,6 +12,7 @@ class OAuthResult:
 class SendResult:
     message_id: str
     schedule_id: str | None = None
+    thread_id: str | None = None
 
 
 class EmailProvider(ABC):
@@ -35,4 +36,9 @@ class EmailProvider(ABC):
         send_at: int | None = None,
     ) -> SendResult:
         """Send an email. When send_at (unix timestamp) is provided, schedule for later delivery."""
+        ...
+
+    @abstractmethod
+    def cancel_scheduled_message(self, grant_id: str, schedule_id: str) -> bool:
+        """Cancel a previously scheduled message."""
         ...

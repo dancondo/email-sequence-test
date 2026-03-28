@@ -9,11 +9,8 @@ from app.modules.email_integration.providers.base import (
 
 
 class NylasEmailProvider(EmailProvider):
-    def __init__(self) -> None:
-        self._client = NylasClient(
-            api_key=settings.NYLAS_API_KEY,
-            api_uri=settings.NYLAS_API_URI,
-        )
+    def __init__(self, client: NylasClient) -> None:
+        self._client = client
 
     def generate_auth_url(self) -> str:
         auth_url = self._client.auth.url_for_oauth2({
@@ -53,8 +50,14 @@ class NylasEmailProvider(EmailProvider):
         message, _ = self._client.messages.send(grant_id, request_body)
 
         schedule_id = getattr(message, "schedule_id", None)
+        thread_id = getattr(message, "thread_id", None)
 
         return SendResult(
             message_id=message.id,
             schedule_id=schedule_id,
+            thread_id=thread_id,
         )
+
+    def cancel_scheduled_message(self, grant_id: str, schedule_id: str) -> bool:
+        self._client.messages.scheduled_messages.destroy(grant_id, schedule_id)
+        return True

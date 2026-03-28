@@ -194,6 +194,7 @@ class SequenceRunService:
                         step_order=step["step_order"],
                         external_message_id=result.message_id,
                         external_schedule_id=result.schedule_id,
+                        external_thread_id=result.thread_id,
                         external_provider=IntegrationProvider.NYLAS,
                     )
                 except Exception as e:

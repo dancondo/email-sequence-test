@@ -123,6 +123,9 @@ class SequenceRunCandidateEvent(Base):
     external_schedule_id: Mapped[str | None] = mapped_column(
         String, nullable=True
     )
+    external_thread_id: Mapped[str | None] = mapped_column(
+        String, nullable=True, index=True
+    )
     external_provider: Mapped[IntegrationProvider | None] = mapped_column(
         Enum(IntegrationProvider), nullable=True
     )

@@ -10,6 +10,7 @@ class Settings(BaseSettings):
     NYLAS_API_KEY: str = ""
     NYLAS_API_URI: str = "https://api.us.nylas.com"
     NYLAS_REDIRECT_URI: str = "http://localhost:9090/api/email-integration/callback"
+    NYLAS_WEBHOOK_SECRET: str = ""
     FRONTEND_URL: str = "http://localhost:9000"
 
     model_config = {"env_file": ".env", "extra": "ignore"}
