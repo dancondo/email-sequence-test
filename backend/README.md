@@ -13,36 +13,25 @@
 | pytest | 8.3.x | Testing framework |
 | httpx | 0.28.x | Async HTTP client (for tests) |
 
-## Project Structure
+## Module Pattern
+
+Every module under `app/modules/` follows this layered architecture:
 
 ```
-backend/
-├── app/
-│   ├── core/                   # Global config & database engine
-│   │   ├── config.py           # Pydantic Settings (env vars)
-│   │   └── database.py         # SQLAlchemy async engine, session, Base
-│   │
-│   ├── modules/                # Domain-specific feature modules
-│   │   └── health/             # Health check module
-│   │       ├── router.py       # GET /api/health endpoint
-│   │       └── service.py      # DB connectivity check logic
-│   │
-│   ├── shared/                 # Cross-module utilities
-│   │   ├── dependencies.py     # FastAPI Depends() factories
-│   │   └── exceptions.py       # Custom HTTP exceptions
-│   │
-│   └── main.py                 # FastAPI app factory & router registration
-│
-├── alembic/                    # Database migrations
-│   ├── env.py                  # Async migration runner
-│   ├── script.py.mako          # Migration template
-│   └── versions/               # Migration files
-│
-├── tests/                      # Test suite
-├── alembic.ini                 # Alembic configuration
-├── Dockerfile                  # Container build
-└── requirements.txt            # Python dependencies
+module_name/
+├── router.py         # Thin HTTP layer — depends on service only
+├── service.py        # Business logic — receives repository + providers via DI
+├── repository.py     # All DB access (SQLAlchemy queries)
+├── dependencies.py   # FastAPI Depends() factories that wire DI
+└── providers/        # (when needed) Abstract interface + concrete implementations
 ```
+
+**Rules:**
+- **Router** never sees the DB session or repository — only the service
+- **Service** never imports SQLAlchemy — only the repository and providers
+- **Repository** owns all database queries
+- **Dependencies** wires the chain: `get_db → Repository → Service`
+- **Providers** wrap external APIs behind abstract interfaces (e.g., `base.py` + `nylas.py`)
 
 ## Running
 

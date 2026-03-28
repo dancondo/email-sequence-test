@@ -1,11 +1,13 @@
-from sqlalchemy import text
-from sqlalchemy.ext.asyncio import AsyncSession
+from app.modules.health.repository import HealthRepository
 
 
-async def check_db_health(db: AsyncSession) -> dict:
-    try:
-        result = await db.execute(text("SELECT 1"))
-        result.scalar_one()
-        return {"status": "healthy", "database": "connected"}
-    except Exception as e:
-        return {"status": "unhealthy", "database": str(e)}
+class HealthService:
+    def __init__(self, repository: HealthRepository):
+        self.repository = repository
+
+    async def check(self) -> dict:
+        try:
+            await self.repository.check_connection()
+            return {"status": "healthy", "database": "connected"}
+        except Exception as e:
+            return {"status": "unhealthy", "database": str(e)}
