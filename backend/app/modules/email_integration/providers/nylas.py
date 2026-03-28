@@ -1,7 +1,11 @@
 from nylas import Client as NylasClient
 
 from app.core.config import settings
-from app.modules.email_integration.providers.base import EmailProvider, OAuthResult
+from app.modules.email_integration.providers.base import (
+    EmailProvider,
+    OAuthResult,
+    SendResult,
+)
 
 
 class NylasEmailProvider(EmailProvider):
@@ -28,4 +32,29 @@ class NylasEmailProvider(EmailProvider):
         return OAuthResult(
             grant_id=response.grant_id,
             email=response.email,
+        )
+
+    def send_message(
+        self,
+        grant_id: str,
+        to_email: str,
+        subject: str,
+        body: str,
+        send_at: int | None = None,
+    ) -> SendResult:
+        request_body = {
+            "to": [{"email": to_email}],
+            "subject": subject,
+            "body": body,
+        }
+        if send_at is not None:
+            request_body["send_at"] = send_at
+
+        message, _ = self._client.messages.send(grant_id, request_body)
+
+        schedule_id = getattr(message, "schedule_id", None)
+
+        return SendResult(
+            message_id=message.id,
+            schedule_id=schedule_id,
         )

@@ -32,6 +32,7 @@ module_name/
 - **Repository** owns all database queries
 - **Dependencies** wires the chain: `get_db → Repository → Service`
 - **Providers** wrap external APIs behind abstract interfaces (e.g., `base.py` + `nylas.py`)
+- **Cross-module access must go through services, never repositories.** A module's repository is private to that module. If module A needs data from module B, it depends on B's service (injected via `dependencies.py`), not B's repository.
 
 ## Running
 

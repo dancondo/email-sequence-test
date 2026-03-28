@@ -19,6 +19,13 @@ class Sequence(Base):
         order_by="SequenceStep.step_order",
     )
 
+    runs: Mapped[list["SequenceRun"]] = relationship(
+        "SequenceRun",
+        back_populates="sequence",
+        cascade="all, delete-orphan",
+        lazy="noload",
+    )
+
 
 class SequenceStep(Base):
     __tablename__ = "sequence_step"

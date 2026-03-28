@@ -1,8 +1,10 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
+from app.modules.candidates.router import router as candidates_router
 from app.modules.email_integration.router import router as email_integration_router
 from app.modules.health.router import router as health_router
+from app.modules.sequence_runs.router import router as sequence_runs_router
 from app.modules.sequences.router import router as sequences_router
 
 app = FastAPI(title="Jooba API", version="0.1.0")
@@ -18,3 +20,5 @@ app.add_middleware(
 app.include_router(health_router)
 app.include_router(email_integration_router)
 app.include_router(sequences_router)
+app.include_router(candidates_router)
+app.include_router(sequence_runs_router)

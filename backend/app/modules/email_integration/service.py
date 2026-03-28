@@ -1,5 +1,5 @@
 from app.modules.email_integration.models import EmailAccount
-from app.modules.email_integration.providers.base import EmailProvider
+from app.modules.email_integration.providers.base import EmailProvider, SendResult
 from app.modules.email_integration.repository import EmailAccountRepository
 
 
@@ -27,3 +27,19 @@ class EmailIntegrationService:
 
     async def disconnect(self) -> bool:
         return await self._repository.disconnect()
+
+    def send_message(
+        self,
+        grant_id: str,
+        to_email: str,
+        subject: str,
+        body: str,
+        send_at: int | None = None,
+    ) -> SendResult:
+        return self._provider.send_message(
+            grant_id=grant_id,
+            to_email=to_email,
+            subject=subject,
+            body=body,
+            send_at=send_at,
+        )

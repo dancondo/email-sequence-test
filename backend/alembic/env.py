@@ -7,7 +7,13 @@ from sqlalchemy.ext.asyncio import async_engine_from_config
 
 from app.core.config import settings
 from app.core.database import Base
+from app.modules.candidates.models import Candidate  # noqa: F401
 from app.modules.email_integration.models import EmailAccount  # noqa: F401
+from app.modules.sequence_runs.models import (  # noqa: F401
+    SequenceRun,
+    SequenceRunCandidate,
+    SequenceRunCandidateEvent,
+)
 from app.modules.sequences.models import Sequence, SequenceStep  # noqa: F401
 
 config = context.config
