@@ -25,6 +25,11 @@ services:
       DATABASE_URL: ${DATABASE_URL}
       BACKEND_HOST: ${BACKEND_HOST}
       BACKEND_PORT: ${BACKEND_PORT}
+      NYLAS_CLIENT_ID: ${NYLAS_CLIENT_ID}
+      NYLAS_API_KEY: ${NYLAS_API_KEY}
+      NYLAS_API_URI: ${NYLAS_API_URI}
+      NYLAS_REDIRECT_URI: ${NYLAS_REDIRECT_URI}
+      FRONTEND_URL: ${FRONTEND_URL}
     volumes:
       - ./backend:/app
     depends_on:
