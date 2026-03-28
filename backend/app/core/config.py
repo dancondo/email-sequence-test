@@ -6,6 +6,9 @@ class Settings(BaseSettings):
     BACKEND_HOST: str = "0.0.0.0"
     BACKEND_PORT: int = 9090
 
+    OPENAI_API_KEY: str = ""
+    OPENAI_MODEL: str = "gpt-4o-mini"
+
     NYLAS_CLIENT_ID: str = ""
     NYLAS_API_KEY: str = ""
     NYLAS_API_URI: str = "https://api.us.nylas.com"

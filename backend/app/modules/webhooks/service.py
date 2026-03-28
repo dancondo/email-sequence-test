@@ -2,6 +2,7 @@ import logging
 
 from fastapi import HTTPException
 
+from app.modules.classification.service import ClassificationService
 from app.modules.email_integration.models import IntegrationProvider
 from app.modules.email_integration.service import EmailIntegrationService
 from app.modules.sequence_runs.models import (
@@ -20,10 +21,12 @@ class WebhookService:
         provider: WebhookProvider,
         run_repository: SequenceRunRepository,
         email_service: EmailIntegrationService,
+        classification_service: ClassificationService,
     ) -> None:
         self._provider = provider
         self._run_repo = run_repository
         self._email_service = email_service
+        self._classification_service = classification_service
 
     async def process_webhook(
         self, raw_body: bytes, signature: str, payload: dict
@@ -79,7 +82,30 @@ class WebhookService:
             },
         )
 
+        await self._classify_reply(src.id, message.body)
+
         await self._cancel_pending_followups(src.id, grant_id)
+
+    async def _classify_reply(
+        self, sequence_run_candidate_id: int, reply_body: str
+    ) -> None:
+        try:
+            result = self._classification_service.classify_reply(reply_body)
+            await self._run_repo.add_event(
+                sequence_run_candidate_id=sequence_run_candidate_id,
+                event_type=EventType.REPLY_CLASSIFIED,
+                extra={
+                    "intent": result.intent,
+                    "confidence": result.confidence,
+                    "reasoning": result.reasoning,
+                },
+            )
+        except Exception:
+            logger.warning(
+                "Failed to classify reply for candidate %s",
+                sequence_run_candidate_id,
+                exc_info=True,
+            )
 
     async def _cancel_pending_followups(
         self, sequence_run_candidate_id: int, grant_id: str

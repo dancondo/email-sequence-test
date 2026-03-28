@@ -3,6 +3,8 @@ from nylas import Client as NylasClient
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
+from app.modules.classification.dependencies import get_classification_service
+from app.modules.classification.service import ClassificationService
 from app.modules.email_integration.dependencies import get_email_service
 from app.modules.email_integration.service import EmailIntegrationService
 from app.modules.nylas.dependencies import get_nylas_client
@@ -22,9 +24,11 @@ def get_webhook_service(
     db: AsyncSession = Depends(get_db),
     provider: WebhookProvider = Depends(get_webhook_provider),
     email_service: EmailIntegrationService = Depends(get_email_service),
+    classification_service: ClassificationService = Depends(get_classification_service),
 ) -> WebhookService:
     return WebhookService(
         provider=provider,
         run_repository=SequenceRunRepository(db),
         email_service=email_service,
+        classification_service=classification_service,
     )
