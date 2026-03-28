@@ -66,6 +66,19 @@ export function SequenceListPage() {
                     <button
                       onClick={() =>
                         navigate(
+                          PATHS.SEQUENCE_RUNS.replace(
+                            ":id",
+                            String(seq.id)
+                          )
+                        )
+                      }
+                      className="mr-2 text-sm font-medium text-green-600 hover:text-green-800"
+                    >
+                      Runs
+                    </button>
+                    <button
+                      onClick={() =>
+                        navigate(
                           PATHS.SEQUENCE_EDIT.replace(
                             ":id",
                             String(seq.id)

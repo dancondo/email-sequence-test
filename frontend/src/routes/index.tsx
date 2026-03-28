@@ -3,6 +3,9 @@ import { HealthPage } from "@/modules/health/pages/HealthPage";
 import { SettingsPage } from "@/modules/email-integration/pages/SettingsPage";
 import { SequenceListPage } from "@/modules/sequences/pages/SequenceListPage";
 import { SequenceEditorPage } from "@/modules/sequences/pages/SequenceEditorPage";
+import { SequenceRunsPage } from "@/modules/sequence-runs/pages/SequenceRunsPage";
+import { SequenceRunDetailPage } from "@/modules/sequence-runs/pages/SequenceRunDetailPage";
+import { CandidateTimelinePage } from "@/modules/sequence-runs/pages/CandidateTimelinePage";
 import { PATHS } from "./paths";
 
 function NavBar() {
@@ -45,6 +48,9 @@ export function AppRouter() {
         <Route path={PATHS.SEQUENCES} element={<SequenceListPage />} />
         <Route path={PATHS.SEQUENCE_NEW} element={<SequenceEditorPage />} />
         <Route path={PATHS.SEQUENCE_EDIT} element={<SequenceEditorPage />} />
+        <Route path={PATHS.SEQUENCE_RUNS} element={<SequenceRunsPage />} />
+        <Route path={PATHS.SEQUENCE_RUN_DETAIL} element={<SequenceRunDetailPage />} />
+        <Route path={PATHS.CANDIDATE_TIMELINE} element={<CandidateTimelinePage />} />
         <Route path="*" element={<Navigate to={PATHS.SEQUENCES} replace />} />
       </Routes>
     </div>
