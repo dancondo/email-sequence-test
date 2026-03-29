@@ -3,7 +3,8 @@ from dataclasses import dataclass
 
 
 @dataclass
-class WebhookDelta:
+class WebhookNotification:
+    trigger_type: str
     grant_id: str
     message_id: str
 
@@ -24,7 +25,7 @@ class WebhookProvider(ABC):
         ...
 
     @abstractmethod
-    def parse_notification(self, payload: dict) -> list[WebhookDelta]:
+    def parse_notification(self, payload: dict) -> list[WebhookNotification]:
         ...
 
     @abstractmethod

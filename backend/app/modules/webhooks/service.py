@@ -9,8 +9,8 @@ from app.modules.sequence_runs.models import (
     EventType,
     SequenceRunCandidateStatus,
 )
-from app.modules.sequence_runs.repository import SequenceRunRepository
-from app.modules.webhooks.providers.base import WebhookProvider
+from app.modules.sequence_runs.service import SequenceRunService
+from app.modules.webhooks.providers.base import WebhookNotification, WebhookProvider
 
 logger = logging.getLogger(__name__)
 
@@ -19,12 +19,12 @@ class WebhookService:
     def __init__(
         self,
         provider: WebhookProvider,
-        run_repository: SequenceRunRepository,
+        run_service: SequenceRunService,
         email_service: EmailIntegrationService,
         classification_service: ClassificationService,
     ) -> None:
         self._provider = provider
-        self._run_repo = run_repository
+        self._run_service = run_service
         self._email_service = email_service
         self._classification_service = classification_service
 
@@ -34,19 +34,23 @@ class WebhookService:
         if not self._provider.verify_signature(raw_body, signature):
             raise HTTPException(status_code=401, detail="Invalid webhook signature")
 
-        deltas = self._provider.parse_notification(payload)
+        notifications = self._provider.parse_notification(payload)
 
-        for delta in deltas:
-            await self._process_delta(delta.grant_id, delta.message_id)
+        for notification in notifications:
+            await self._process_message(notification)
 
-    async def _process_delta(self, grant_id: str, message_id: str) -> None:
-        message = self._provider.fetch_message(grant_id, message_id)
+    async def _process_message(self, notification: WebhookNotification) -> None:
+        message = self._provider.fetch_message(
+            notification.grant_id, notification.message_id
+        )
 
         if not message.thread_id:
-            logger.warning("Reply %s has no thread_id, skipping", message_id)
+            logger.warning(
+                "Message %s has no thread_id, skipping", notification.message_id
+            )
             return
 
-        src = await self._run_repo.get_candidate_by_thread_id(
+        src = await self._run_service.get_candidate_by_thread_id(
             message.thread_id, IntegrationProvider.NYLAS
         )
         if not src:
@@ -55,50 +59,65 @@ class WebhookService:
             )
             return
 
+        is_inbound = await self._is_inbound_message(message.from_email)
+        if is_inbound:
+            await self._process_reply(src, notification, message)
+        else:
+            await self._process_message_created(src, notification, message)
+
+    async def _is_inbound_message(self, from_email: str) -> bool:
+        account = await self._email_service.get_status()
+        if not account:
+            return False
+        return from_email.lower() != account.email.lower()
+
+    async def _process_reply(self, src, notification, message) -> None:
         if src.status == SequenceRunCandidateStatus.REPLIED:
             return
 
-        already_exists = await self._run_repo.has_event(
+        already_exists = await self._run_service.has_event(
             src.id, EventType.REPLY_RECEIVED, message.external_message_id
         )
         if already_exists:
             return
 
-        await self._run_repo.update_candidate_status(
-            src, SequenceRunCandidateStatus.REPLIED
-        )
-
-        await self._run_repo.add_event(
-            sequence_run_candidate_id=src.id,
-            event_type=EventType.REPLY_RECEIVED,
+        await self._run_service.mark_candidate_replied(
+            src=src,
             external_message_id=message.external_message_id,
-            external_thread_id=message.thread_id,
-            external_provider=IntegrationProvider.NYLAS,
-            extra={
-                "from_email": message.from_email,
-                "subject": message.subject,
-                "body": message.body,
-                "received_at": message.received_at,
-            },
+            thread_id=message.thread_id,
+            from_email=message.from_email,
+            subject=message.subject,
+            body=message.body,
+            received_at=message.received_at,
         )
 
         await self._classify_reply(src.id, message.body)
 
-        await self._cancel_pending_followups(src.id, grant_id)
+        await self._cancel_pending_followups(src.id, notification.grant_id)
+
+    async def _process_message_created(self, src, notification, message) -> None:
+        already_exists = await self._run_service.has_event(
+            src.id, EventType.EMAIL_SENT, message.external_message_id
+        )
+        if already_exists:
+            return
+
+        await self._run_service.record_email_sent(
+            src=src,
+            external_message_id=message.external_message_id,
+            thread_id=message.thread_id,
+        )
 
     async def _classify_reply(
         self, sequence_run_candidate_id: int, reply_body: str
     ) -> None:
         try:
             result = self._classification_service.classify_reply(reply_body)
-            await self._run_repo.add_event(
+            await self._run_service.add_classification_event(
                 sequence_run_candidate_id=sequence_run_candidate_id,
-                event_type=EventType.REPLY_CLASSIFIED,
-                extra={
-                    "intent": result.intent,
-                    "confidence": result.confidence,
-                    "reasoning": result.reasoning,
-                },
+                intent=result.intent,
+                confidence=result.confidence,
+                reasoning=result.reasoning,
             )
         except Exception:
             logger.warning(
@@ -110,7 +129,7 @@ class WebhookService:
     async def _cancel_pending_followups(
         self, sequence_run_candidate_id: int, grant_id: str
     ) -> None:
-        pending_events = await self._run_repo.get_pending_scheduled_events(
+        pending_events = await self._run_service.get_pending_scheduled_events(
             sequence_run_candidate_id
         )
         for event in pending_events:

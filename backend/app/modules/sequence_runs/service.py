@@ -9,6 +9,7 @@ from app.modules.email_integration.service import EmailIntegrationService
 from app.modules.sequence_runs.models import (
     EventType,
     SequenceRun,
+    SequenceRunCandidate,
     SequenceRunCandidateEvent,
     SequenceRunCandidateStatus,
     SequenceRunStatus,
@@ -287,3 +288,94 @@ class SequenceRunService:
         )
 
         return event
+
+    # --- Webhook-facing methods ---
+
+    async def get_candidate_by_thread_id(
+        self, thread_id: str, provider: IntegrationProvider
+    ) -> SequenceRunCandidate | None:
+        return await self._run_repo.get_candidate_by_thread_id(thread_id, provider)
+
+    async def has_event(
+        self,
+        sequence_run_candidate_id: int,
+        event_type: EventType,
+        external_message_id: str,
+    ) -> bool:
+        return await self._run_repo.has_event(
+            sequence_run_candidate_id, event_type, external_message_id
+        )
+
+    async def mark_candidate_replied(
+        self,
+        src: SequenceRunCandidate,
+        external_message_id: str,
+        thread_id: str,
+        from_email: str,
+        subject: str,
+        body: str,
+        received_at: str,
+    ) -> None:
+        await self._run_repo.update_candidate_status(
+            src, SequenceRunCandidateStatus.REPLIED
+        )
+        await self._run_repo.add_event(
+            sequence_run_candidate_id=src.id,
+            event_type=EventType.REPLY_RECEIVED,
+            external_message_id=external_message_id,
+            external_thread_id=thread_id,
+            external_provider=IntegrationProvider.NYLAS,
+            extra={
+                "from_email": from_email,
+                "subject": subject,
+                "body": body,
+                "received_at": received_at,
+            },
+        )
+
+    async def record_email_sent(
+        self,
+        src: SequenceRunCandidate,
+        external_message_id: str,
+        thread_id: str | None,
+    ) -> None:
+        scheduled_event = await self._run_repo.get_scheduled_event_by_message_id(
+            src.id, external_message_id
+        )
+        step_order = scheduled_event.step_order if scheduled_event else None
+
+        await self._run_repo.add_event(
+            sequence_run_candidate_id=src.id,
+            event_type=EventType.EMAIL_SENT,
+            step_order=step_order,
+            external_message_id=external_message_id,
+            external_thread_id=thread_id,
+            external_provider=IntegrationProvider.NYLAS,
+        )
+
+        if step_order is not None:
+            await self._run_repo.update_candidate_step_order(src, step_order)
+
+    async def get_pending_scheduled_events(
+        self, sequence_run_candidate_id: int
+    ) -> list[SequenceRunCandidateEvent]:
+        return await self._run_repo.get_pending_scheduled_events(
+            sequence_run_candidate_id
+        )
+
+    async def add_classification_event(
+        self,
+        sequence_run_candidate_id: int,
+        intent: str,
+        confidence: float,
+        reasoning: str,
+    ) -> None:
+        await self._run_repo.add_event(
+            sequence_run_candidate_id=sequence_run_candidate_id,
+            event_type=EventType.REPLY_CLASSIFIED,
+            extra={
+                "intent": intent,
+                "confidence": confidence,
+                "reasoning": reasoning,
+            },
+        )

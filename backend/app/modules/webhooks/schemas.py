@@ -1,21 +1,24 @@
 from pydantic import BaseModel
 
 
-class NylasWebhookObjectData(BaseModel):
-    id: str
-    grant_id: str
+class NylasWebhookObject(BaseModel):
+    id: str = ""
+    grant_id: str = ""
+    message_id: str = ""
 
     model_config = {"extra": "ignore"}
 
 
-class NylasWebhookDelta(BaseModel):
-    type: str
-    object_data: NylasWebhookObjectData
+class NylasWebhookData(BaseModel):
+    application_id: str = ""
+    grant_id: str = ""
+    object: NylasWebhookObject
 
     model_config = {"extra": "ignore"}
 
 
 class NylasWebhookPayload(BaseModel):
-    deltas: list[NylasWebhookDelta]
+    type: str
+    data: NylasWebhookData
 
     model_config = {"extra": "ignore"}

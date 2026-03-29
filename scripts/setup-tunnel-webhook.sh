@@ -60,7 +60,7 @@ RESPONSE=$(curl -s -X POST "https://api.us.nylas.com/v3/webhooks" \
   -H "Authorization: Bearer ${NYLAS_API_KEY}" \
   -H "Content-Type: application/json" \
   -d "{
-    \"trigger_types\": [\"message.created\", \"thread.replied\"],
+    \"trigger_types\": [\"message.created\"],
     \"webhook_url\": \"${WEBHOOK_URL}\",
     \"description\": \"Local dev webhook (cloudflare tunnel)\",
     \"notification_email_addresses\": []

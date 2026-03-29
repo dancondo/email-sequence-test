@@ -226,6 +226,30 @@ class SequenceRunRepository:
         await self._db.refresh(event)
         return event
 
+    async def get_scheduled_event_by_message_id(
+        self, sequence_run_candidate_id: int, external_message_id: str
+    ) -> SequenceRunCandidateEvent | None:
+        stmt = (
+            select(SequenceRunCandidateEvent)
+            .where(
+                SequenceRunCandidateEvent.sequence_run_candidate_id
+                == sequence_run_candidate_id,
+                SequenceRunCandidateEvent.event_type == EventType.EMAIL_SCHEDULED,
+                SequenceRunCandidateEvent.external_message_id == external_message_id,
+            )
+            .limit(1)
+        )
+        result = await self._db.execute(stmt)
+        return result.scalar_one_or_none()
+
+    async def update_candidate_step_order(
+        self, src: SequenceRunCandidate, step_order: int
+    ) -> SequenceRunCandidate:
+        src.current_step_order = step_order
+        await self._db.commit()
+        await self._db.refresh(src)
+        return src
+
     async def get_last_reply_received_event(
         self, sequence_run_candidate_id: int
     ) -> SequenceRunCandidateEvent | None:
