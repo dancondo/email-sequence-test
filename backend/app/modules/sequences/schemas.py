@@ -7,6 +7,7 @@ class SequenceStepCreate(BaseModel):
     subject: str
     body: str
     delay_minutes: int = 0
+    step_type: str = "default"
 
 
 class SequenceStepResponse(BaseModel):
@@ -16,6 +17,7 @@ class SequenceStepResponse(BaseModel):
     subject: str
     body: str
     delay_minutes: int
+    step_type: str
     created_at: datetime
     updated_at: datetime
 
@@ -26,12 +28,14 @@ class SequenceCreate(BaseModel):
     name: str
     steps: list[SequenceStepCreate] = []
     referral_list_id: int | None = None
+    referral_list_name: str | None = None
 
 
 class SequenceUpdate(BaseModel):
     name: str | None = None
     steps: list[SequenceStepCreate] | None = None
     referral_list_id: int | None = None
+    referral_list_name: str | None = None
 
 
 class SequenceResponse(BaseModel):

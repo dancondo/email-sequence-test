@@ -110,7 +110,9 @@ export function SequenceDetailPage() {
             Workflow Definition
           </h2>
           <div className="space-y-4">
-            {sequence?.steps.map((step, index) => (
+            {sequence?.steps
+              .filter((s) => s.step_type !== "referral_handoff")
+              .map((step, index) => (
               <div key={index} className="flex gap-3">
                 <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-primary text-xs font-bold text-on-primary">
                   {index + 1}
@@ -144,6 +146,56 @@ export function SequenceDetailPage() {
               <p className="text-sm text-on-surface-variant">Loading...</p>
             )}
           </div>
+
+          {/* Referral Handoff Step */}
+          {sequence?.steps.some((s) => s.step_type === "referral_handoff") && (
+            <div className="mt-6">
+              <h2 className="mb-4 text-xs font-medium uppercase tracking-wider text-on-surface-variant">
+                Referral Handoff
+              </h2>
+              {sequence.steps
+                .filter((s) => s.step_type === "referral_handoff")
+                .map((step) => (
+                  <div key={step.id} className="flex gap-3">
+                    <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-secondary text-on-secondary">
+                      <svg
+                        className="h-3.5 w-3.5"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                        strokeWidth={2}
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          d="M7.5 21L3 16.5m0 0L7.5 12M3 16.5h13.5m0-13.5L21 7.5m0 0L16.5 12M21 7.5H7.5"
+                        />
+                      </svg>
+                    </div>
+                    <div className="flex-1">
+                      <div className="mb-1 flex items-center gap-2">
+                        <span className="text-sm font-semibold text-on-surface">
+                          Referral Thank You
+                        </span>
+                        <span className="text-xs text-on-surface-variant">
+                          Sent when a referral is detected
+                        </span>
+                      </div>
+                      <div className="rounded-lg border border-secondary/30 bg-surface-container-low p-4">
+                        <p className="mb-2 text-sm font-medium text-on-surface">
+                          {step.subject || "No subject"}
+                        </p>
+                        <div className="border-t border-secondary/20 pt-2">
+                          <p className="line-clamp-3 text-sm italic leading-relaxed text-on-surface-variant">
+                            &ldquo;{stripHtml(step.body) || "Empty body"}&rdquo;
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+            </div>
+          )}
         </div>
 
         {/* Global Metrics */}

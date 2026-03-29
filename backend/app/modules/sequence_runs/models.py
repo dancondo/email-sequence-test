@@ -43,6 +43,7 @@ class EventType(str, enum.Enum):
     COMPLETED = "completed"
     UNSUBSCRIBED = "unsubscribed"
     REFERRAL_DETECTED = "referral_detected"
+    REFERRAL_HANDOFF_SENT = "referral_handoff_sent"
 
 
 class SequenceRun(Base):

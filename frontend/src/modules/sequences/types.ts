@@ -1,7 +1,10 @@
+export type StepType = "default" | "referral_handoff";
+
 export interface SequenceStep {
   id: number;
   sequence_id: number;
   step_order: number;
+  step_type: StepType;
   subject: string;
   body: string;
   delay_minutes: number;
@@ -36,16 +39,19 @@ export interface SequenceStepInput {
   subject: string;
   body: string;
   delay_minutes: number;
+  step_type?: StepType;
 }
 
 export interface CreateSequencePayload {
   name: string;
   steps: SequenceStepInput[];
   referral_list_id?: number | null;
+  referral_list_name?: string | null;
 }
 
 export interface UpdateSequencePayload {
   name?: string;
   steps?: SequenceStepInput[];
   referral_list_id?: number | null;
+  referral_list_name?: string | null;
 }

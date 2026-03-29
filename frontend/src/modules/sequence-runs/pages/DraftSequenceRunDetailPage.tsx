@@ -34,10 +34,17 @@ export function DraftSequenceRunDetailPage({
   const removeCandidateMutation = useRemoveCandidate(sequenceId, runId);
 
   const snapshot = run.snapshot;
-  const stepCount = snapshot?.steps.length ?? sequence?.steps.length ?? 0;
+  const defaultSnapshotSteps = snapshot?.steps.filter(
+    (s) => s.step_type !== "referral_handoff"
+  );
+  const defaultSequenceSteps = sequence?.steps.filter(
+    (s) => s.step_type !== "referral_handoff"
+  );
+  const stepCount =
+    defaultSnapshotSteps?.length ?? defaultSequenceSteps?.length ?? 0;
   const totalDelayMinutes =
-    snapshot?.steps.reduce((sum, s) => sum + s.delay_minutes, 0) ??
-    sequence?.steps.reduce((sum, s) => sum + s.delay_minutes, 0) ??
+    defaultSnapshotSteps?.reduce((sum, s) => sum + s.delay_minutes, 0) ??
+    defaultSequenceSteps?.reduce((sum, s) => sum + s.delay_minutes, 0) ??
     0;
 
   const handleUploadComplete = (result: CsvUploadResult) => {
@@ -174,6 +181,14 @@ export function DraftSequenceRunDetailPage({
                 <span className="text-on-surface-variant">Initial Delay</span>
                 <span className="font-medium text-on-surface">Immediate</span>
               </div>
+              {sequence?.referral_list_name && (
+                <div className="flex justify-between text-xs">
+                  <span className="text-on-surface-variant">Referral List</span>
+                  <span className="font-medium text-secondary">
+                    {sequence.referral_list_name}
+                  </span>
+                </div>
+              )}
             </div>
           </div>
 

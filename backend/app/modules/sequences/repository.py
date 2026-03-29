@@ -2,7 +2,7 @@ from sqlalchemy import delete, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
-from app.modules.sequences.models import Sequence, SequenceStep
+from app.modules.sequences.models import Sequence, SequenceStep, StepType
 
 
 class SequenceRepository:
@@ -30,19 +30,43 @@ class SequenceRepository:
         self._db.add(sequence)
         await self._db.flush()
 
-        for i, step_data in enumerate(steps_data):
-            step = SequenceStep(
-                sequence_id=sequence.id,
-                step_order=i,
-                subject=step_data["subject"],
-                body=step_data["body"],
-                delay_minutes=step_data.get("delay_minutes", 0),
-            )
-            self._db.add(step)
+        self._add_steps(sequence.id, steps_data)
 
         await self._db.commit()
         await self._db.refresh(sequence)
         return sequence
+
+    def _add_steps(self, sequence_id: int, steps_data: list[dict]) -> None:
+        default_steps = [
+            s for s in steps_data if s.get("step_type", "default") == "default"
+        ]
+        handoff_steps = [
+            s for s in steps_data if s.get("step_type") == "referral_handoff"
+        ]
+
+        for i, step_data in enumerate(default_steps):
+            self._db.add(
+                SequenceStep(
+                    sequence_id=sequence_id,
+                    step_order=i,
+                    step_type=StepType.DEFAULT,
+                    subject=step_data["subject"],
+                    body=step_data["body"],
+                    delay_minutes=step_data.get("delay_minutes", 0),
+                )
+            )
+
+        for step_data in handoff_steps[:1]:
+            self._db.add(
+                SequenceStep(
+                    sequence_id=sequence_id,
+                    step_order=9999,
+                    step_type=StepType.REFERRAL_HANDOFF,
+                    subject=step_data["subject"],
+                    body=step_data["body"],
+                    delay_minutes=0,
+                )
+            )
 
     async def update(
         self,
@@ -62,15 +86,7 @@ class SequenceRepository:
                     SequenceStep.sequence_id == sequence.id
                 )
             )
-            for i, step_data in enumerate(steps_data):
-                step = SequenceStep(
-                    sequence_id=sequence.id,
-                    step_order=i,
-                    subject=step_data["subject"],
-                    body=step_data["body"],
-                    delay_minutes=step_data.get("delay_minutes", 0),
-                )
-                self._db.add(step)
+            self._add_steps(sequence.id, steps_data)
 
         await self._db.commit()
         await self._db.refresh(sequence)

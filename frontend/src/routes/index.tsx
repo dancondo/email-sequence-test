@@ -1,6 +1,7 @@
 import { Routes, Route, Navigate, Link, useLocation } from "react-router-dom";
 import { HealthPage } from "@/modules/health/pages/HealthPage";
 import { SettingsPage } from "@/modules/email-integration/pages/SettingsPage";
+import { useConnectionStatus } from "@/modules/email-integration/hooks";
 import { SequenceListPage } from "@/modules/sequences/pages/SequenceListPage";
 import { SequenceDetailPage } from "@/modules/sequences/pages/SequenceDetailPage";
 import { SequenceEditorPage } from "@/modules/sequences/pages/SequenceEditorPage";
@@ -42,6 +43,24 @@ function NavBar() {
 }
 
 export function AppRouter() {
+  const { data, isLoading } = useConnectionStatus();
+  const isConnected = data?.connected;
+
+  if (isLoading) {
+    return <div className="min-h-screen bg-background" />;
+  }
+
+  if (!isConnected) {
+    return (
+      <div className="min-h-screen bg-background">
+        <Routes>
+          <Route path={PATHS.SETTINGS} element={<SettingsPage />} />
+          <Route path="*" element={<Navigate to={PATHS.SETTINGS} replace />} />
+        </Routes>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-background">
       <NavBar />

@@ -4,7 +4,7 @@ import { RichTextEditor } from "@/shared/components/RichTextEditor";
 import { useSequence, useCreateSequence, useUpdateSequence } from "../hooks";
 import { createRun } from "@/modules/sequence-runs/api";
 import { useCandidateLists } from "@/modules/candidate-lists/hooks";
-import { SequenceStepInput } from "../types";
+import { SequenceStepInput, StepType } from "../types";
 import { PATHS } from "@/routes/paths";
 
 const EMPTY_STEP: SequenceStepInput = {
@@ -27,21 +27,39 @@ export function SequenceEditorPage() {
   const [steps, setSteps] = useState<SequenceStepInput[]>([
     { ...EMPTY_STEP },
   ]);
-  const [referralListId, setReferralListId] = useState<number | null>(null);
+  const [handoffStep, setHandoffStep] = useState<SequenceStepInput | null>(
+    null
+  );
+  const [referralListInput, setReferralListInput] = useState("");
+  const [stepsOpen, setStepsOpen] = useState(true);
   const [initialized, setInitialized] = useState(false);
   const { data: candidateLists } = useCandidateLists();
 
   useEffect(() => {
     if (isEdit && existing && !initialized) {
       setName(existing.name);
-      setSteps(
-        existing.steps.map((s) => ({
+      const defaultSteps = existing.steps
+        .filter((s) => s.step_type !== "referral_handoff")
+        .map((s) => ({
           subject: s.subject,
           body: s.body,
           delay_minutes: s.delay_minutes,
-        }))
+        }));
+      const handoff = existing.steps.find(
+        (s) => s.step_type === "referral_handoff"
       );
-      setReferralListId(existing.referral_list_id);
+      setSteps(defaultSteps.length > 0 ? defaultSteps : [{ ...EMPTY_STEP }]);
+      setHandoffStep(
+        handoff
+          ? {
+              subject: handoff.subject,
+              body: handoff.body,
+              delay_minutes: 0,
+              step_type: "referral_handoff",
+            }
+          : null
+      );
+      setReferralListInput(existing.referral_list_name ?? "");
       setInitialized(true);
     }
   }, [isEdit, existing, initialized]);
@@ -68,17 +86,32 @@ export function SequenceEditorPage() {
   const handleSave = async () => {
     if (!name.trim()) return;
 
+    const allSteps: SequenceStepInput[] = [
+      ...steps.map((s) => ({ ...s, step_type: "default" as StepType })),
+      ...(handoffStep
+        ? [{ ...handoffStep, step_type: "referral_handoff" as StepType }]
+        : []),
+    ];
+
+    const trimmedReferral = referralListInput.trim();
+    const matchedList = candidateLists?.find((l) => l.name === trimmedReferral);
+    const referralPayload = trimmedReferral
+      ? matchedList
+        ? { referral_list_id: matchedList.id }
+        : { referral_list_name: trimmedReferral }
+      : { referral_list_id: null };
+
     let seqId = sequenceId;
     if (isEdit) {
       await updateMutation.mutateAsync({
         id: sequenceId,
-        data: { name, steps, referral_list_id: referralListId },
+        data: { name, steps: allSteps, ...referralPayload },
       });
     } else {
       const created = await createMutation.mutateAsync({
         name,
-        steps,
-        referral_list_id: referralListId,
+        steps: allSteps,
+        ...referralPayload,
       });
       seqId = created.id;
     }
@@ -177,29 +210,71 @@ export function SequenceEditorPage() {
         <label className="mb-1.5 mt-4 block text-xs font-medium uppercase tracking-wider text-on-surface-variant">
           Referral List (optional)
         </label>
-        <select
-          value={referralListId ?? ""}
-          onChange={(e) =>
-            setReferralListId(
-              e.target.value ? parseInt(e.target.value, 10) : null
-            )
-          }
-          className="w-full rounded-lg border border-outline-variant bg-surface px-3 py-2.5 text-sm text-on-surface focus:border-secondary focus:outline-none focus:ring-1 focus:ring-secondary"
-        >
-          <option value="">None — referrals won't be added to a list</option>
+        <input
+          type="text"
+          list="referral-lists"
+          value={referralListInput}
+          onChange={(e) => setReferralListInput(e.target.value)}
+          placeholder="Select or type a new list name"
+          className="w-full rounded-lg border border-outline-variant bg-surface px-3 py-2.5 text-sm text-on-surface placeholder:text-outline focus:border-secondary focus:outline-none focus:ring-1 focus:ring-secondary"
+        />
+        <datalist id="referral-lists">
           {candidateLists?.map((list) => (
-            <option key={list.id} value={list.id}>
-              {list.name}
-            </option>
+            <option key={list.id} value={list.name} />
           ))}
-        </select>
+        </datalist>
         <p className="mt-1 text-xs text-on-surface-variant">
           When a candidate refers someone, the referral will be added to this
           list automatically.
         </p>
       </div>
 
-      {/* Steps */}
+      {/* Email Sequence Section */}
+      <button
+        type="button"
+        onClick={() => setStepsOpen((o) => !o)}
+        className={`${stepsOpen ? "mb-4" : ""} flex w-full items-center gap-3`}
+      >
+        <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary">
+          <svg
+            className="h-4 w-4 text-on-primary"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+            strokeWidth={2}
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              d="M21.75 6.75v10.5a2.25 2.25 0 01-2.25 2.25h-15a2.25 2.25 0 01-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25m19.5 0v.243a2.25 2.25 0 01-1.07 1.916l-7.5 4.615a2.25 2.25 0 01-2.36 0L3.32 8.91a2.25 2.25 0 01-1.07-1.916V6.75"
+            />
+          </svg>
+        </div>
+        <h2 className="text-lg font-semibold text-on-surface">
+          Email Sequence
+        </h2>
+        <span className="ml-1 text-xs text-on-surface-variant">
+          {steps.length} {steps.length === 1 ? "step" : "steps"}
+        </span>
+        <svg
+          className={`ml-auto h-5 w-5 text-on-surface-variant transition-transform duration-200 ease-in-out ${stepsOpen ? "-rotate-180" : ""}`}
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke="currentColor"
+          strokeWidth={2}
+        >
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            d="M19.5 8.25l-7.5 7.5-7.5-7.5"
+          />
+        </svg>
+      </button>
+
+      <div
+        className={`grid transition-[grid-template-rows] duration-300 ease-in-out ${stepsOpen ? "grid-rows-[1fr]" : "grid-rows-[0fr]"}`}
+      >
+        <div className="overflow-hidden">
       <div className="space-y-6">
         {steps.map((step, index) => (
           <div
@@ -207,7 +282,7 @@ export function SequenceEditorPage() {
             className="rounded-lg border border-outline-variant bg-surface-container-lowest p-5 shadow-ambient"
           >
             {/* Step Header */}
-            <div className="mb-4 flex items-start justify-between">
+            <div className="flex items-start justify-between">
               <div className="flex items-start gap-3">
                 <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-primary text-xs font-bold text-on-primary">
                   {index + 1}
@@ -321,6 +396,132 @@ export function SequenceEditorPage() {
           Add Next Step
         </span>
       </button>
+        </div>
+      </div>
+
+      {/* Referral Handoff Section */}
+      <div className="mt-10">
+        <div className="mb-4 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-secondary">
+              <svg
+                className="h-4 w-4 text-on-secondary"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+                strokeWidth={2}
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M7.5 21L3 16.5m0 0L7.5 12M3 16.5h13.5m0-13.5L21 7.5m0 0L16.5 12M21 7.5H7.5"
+                />
+              </svg>
+            </div>
+            <h2 className="text-lg font-semibold text-on-surface">
+              Referral Handoff Email
+            </h2>
+          </div>
+          {!handoffStep && (
+            <button
+              onClick={() =>
+                setHandoffStep({
+                  subject: "",
+                  body: "",
+                  delay_minutes: 0,
+                  step_type: "referral_handoff",
+                })
+              }
+              className="rounded-lg border border-secondary px-4 py-2 text-sm font-medium text-secondary hover:bg-secondary/5"
+            >
+              + Add Handoff Email
+            </button>
+          )}
+        </div>
+        <p className="mb-4 text-xs text-on-surface-variant">
+          Sent to the original candidate when they refer someone. Only one
+          allowed per sequence.
+        </p>
+        {handoffStep && (
+          <div className="rounded-lg border border-secondary/30 bg-surface-container-lowest p-5 shadow-ambient">
+            <div className="mb-4 flex items-start justify-between">
+              <div className="flex items-center gap-3">
+                <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-secondary text-xs font-bold text-on-secondary">
+                  <svg
+                    className="h-3.5 w-3.5"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                    strokeWidth={2}
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      d="M7.5 21L3 16.5m0 0L7.5 12M3 16.5h13.5m0-13.5L21 7.5m0 0L16.5 12M21 7.5H7.5"
+                    />
+                  </svg>
+                </div>
+                <h3 className="text-base font-semibold text-on-surface">
+                  Referral Thank You
+                </h3>
+              </div>
+              <button
+                onClick={() => setHandoffStep(null)}
+                className="rounded p-1 text-on-surface-variant hover:bg-surface-container hover:text-error"
+                title="Remove handoff email"
+              >
+                <svg
+                  className="h-4 w-4"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                  strokeWidth={2}
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                  />
+                </svg>
+              </button>
+            </div>
+
+            {/* Subject Line */}
+            <div className="mb-4">
+              <label className="mb-1.5 block text-xs font-medium uppercase tracking-wider text-on-surface-variant">
+                Subject Line
+              </label>
+              <input
+                type="text"
+                value={handoffStep.subject}
+                onChange={(e) =>
+                  setHandoffStep((prev) =>
+                    prev ? { ...prev, subject: e.target.value } : prev
+                  )
+                }
+                placeholder="e.g., Thanks for the referral!"
+                className="w-full rounded-lg border border-outline-variant bg-surface px-3 py-2 text-sm text-on-surface placeholder:text-outline focus:border-secondary focus:outline-none focus:ring-1 focus:ring-secondary"
+              />
+            </div>
+
+            {/* Body */}
+            <div>
+              <label className="mb-1.5 block text-xs font-medium uppercase tracking-wider text-on-surface-variant">
+                Body
+              </label>
+              <RichTextEditor
+                content={handoffStep.body}
+                onChange={(html) =>
+                  setHandoffStep((prev) =>
+                    prev ? { ...prev, body: html } : prev
+                  )
+                }
+                placeholder="Write your referral thank you email..."
+              />
+            </div>
+          </div>
+        )}
+      </div>
     </div>
   );
 }

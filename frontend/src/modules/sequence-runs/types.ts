@@ -22,6 +22,7 @@ export type EventType =
 
 export interface SnapshotStep {
   step_order: number;
+  step_type?: string;
   subject: string;
   body: string;
   delay_minutes: number;

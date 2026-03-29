@@ -184,6 +184,7 @@ class SequenceRunService:
             "steps": [
                 {
                     "step_order": step.step_order,
+                    "step_type": step.step_type.value,
                     "subject": step.subject,
                     "body": step.body,
                     "delay_minutes": step.delay_minutes,
@@ -193,7 +194,10 @@ class SequenceRunService:
         }
         await self._run_repo.set_snapshot(run, snapshot)
 
-        steps = snapshot["steps"]
+        steps = [
+            s for s in snapshot["steps"]
+            if s.get("step_type", "default") == "default"
+        ]
 
         now_ts = int(time.time())
         enrollments_started = 0
@@ -454,3 +458,63 @@ class SequenceRunService:
                 "referral_list_name": referral_list_name,
             },
         )
+
+        # Send referral handoff email to the referrer
+        await self._send_referral_handoff(
+            src=src,
+            referral_email=referral_email,
+            referral_name=referral_name,
+        )
+
+    async def _send_referral_handoff(
+        self,
+        src: SequenceRunCandidate,
+        referral_email: str,
+        referral_name: str | None,
+    ) -> None:
+        run = src.sequence_run
+        snapshot = run.snapshot
+        if not snapshot:
+            return
+
+        handoff_step = next(
+            (s for s in snapshot["steps"] if s.get("step_type") == "referral_handoff"),
+            None,
+        )
+        if not handoff_step:
+            return
+
+        account = await self._email_service.get_status()
+        if not account:
+            return
+
+        referrer_email = src.candidate.email
+
+        try:
+            result = self._email_service.send_message(
+                grant_id=account.grant_id,
+                to_email=referrer_email,
+                subject=handoff_step["subject"],
+                body=handoff_step["body"],
+            )
+
+            await self._run_repo.add_event(
+                sequence_run_candidate_id=src.id,
+                event_type=EventType.REFERRAL_HANDOFF_SENT,
+                step_order=handoff_step["step_order"],
+                external_message_id=result.message_id,
+                external_thread_id=result.thread_id,
+                external_provider=IntegrationProvider.NYLAS,
+                extra={
+                    "to_email": referrer_email,
+                    "referred_candidate_email": referral_email,
+                    "referred_candidate_name": referral_name,
+                },
+            )
+        except Exception as e:
+            await self._run_repo.add_event(
+                sequence_run_candidate_id=src.id,
+                event_type=EventType.EMAIL_FAILED,
+                step_order=handoff_step["step_order"],
+                extra={"error": str(e), "context": "referral_handoff"},
+            )

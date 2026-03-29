@@ -1,7 +1,14 @@
-from sqlalchemy import Boolean, ForeignKey, Integer, String, Text
+import enum
+
+from sqlalchemy import Boolean, Enum, ForeignKey, Integer, String, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.core.database import Base
+
+
+class StepType(str, enum.Enum):
+    DEFAULT = "default"
+    REFERRAL_HANDOFF = "referral_handoff"
 
 
 class Sequence(Base):
@@ -49,6 +56,11 @@ class SequenceStep(Base):
     subject: Mapped[str] = mapped_column(String, nullable=False)
     body: Mapped[str] = mapped_column(Text, nullable=False)
     delay_minutes: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    step_type: Mapped[StepType] = mapped_column(
+        Enum(StepType, values_callable=lambda e: [m.value for m in e]),
+        nullable=False,
+        default=StepType.DEFAULT,
+    )
 
     sequence: Mapped["Sequence"] = relationship(
         "Sequence", back_populates="steps"
