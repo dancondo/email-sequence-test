@@ -8,11 +8,15 @@ up:
 up-build:
 	docker compose up --build
 
-up-ngrok:
-	docker compose -f docker-compose.yml -f docker-compose.ngrok.yml up
+up-tunnel:
+	docker compose -f docker-compose.yml -f docker-compose.tunnel.yml up -d
+	@./scripts/setup-tunnel-webhook.sh
+	docker compose -f docker-compose.yml -f docker-compose.tunnel.yml logs -f
 
-up-ngrok-build:
-	docker compose -f docker-compose.yml -f docker-compose.ngrok.yml up --build
+up-tunnel-build:
+	docker compose -f docker-compose.yml -f docker-compose.tunnel.yml up -d --build
+	@./scripts/setup-tunnel-webhook.sh
+	docker compose -f docker-compose.yml -f docker-compose.tunnel.yml logs -f
 
 down:
 	docker compose down
