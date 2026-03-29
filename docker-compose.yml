@@ -31,6 +31,7 @@ services:
       NYLAS_API_KEY: ${NYLAS_API_KEY}
       NYLAS_API_URI: ${NYLAS_API_URI}
       NYLAS_REDIRECT_URI: ${NYLAS_REDIRECT_URI}
+      NYLAS_WEBHOOK_SECRET: ${NYLAS_WEBHOOK_SECRET:-}
       FRONTEND_URL: ${FRONTEND_URL}
     volumes:
       - ./backend:/app
