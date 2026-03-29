@@ -8,6 +8,12 @@ up:
 up-build:
 	docker compose up --build
 
+up-ngrok:
+	docker compose -f docker-compose.yml -f docker-compose.ngrok.yml up
+
+up-ngrok-build:
+	docker compose -f docker-compose.yml -f docker-compose.ngrok.yml up --build
+
 down:
 	docker compose down
 

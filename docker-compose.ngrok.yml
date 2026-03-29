@@ -1,0 +1,10 @@
+services:
+  ngrok:
+    image: ngrok/ngrok:latest
+    environment:
+      NGROK_AUTHTOKEN: ${NGROK_AUTHTOKEN}
+    command: http backend:9090
+    ports:
+      - "9040:4040"
+    depends_on:
+      - backend
