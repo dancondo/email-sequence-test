@@ -1,12 +1,15 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { useCandidates } from "../hooks";
 import { useCandidateLists } from "@/modules/candidate-lists/hooks";
 import { PATHS } from "@/routes/paths";
 
 export function CandidateListPage() {
   const navigate = useNavigate();
-  const [selectedListIds, setSelectedListIds] = useState<number[]>([]);
+  const [searchParams] = useSearchParams();
+  const [selectedListIds, setSelectedListIds] = useState<number[]>(() =>
+    searchParams.getAll("list_ids").map(Number).filter((n) => !isNaN(n))
+  );
   const [filterOpen, setFilterOpen] = useState(false);
 
   const { data: candidates, isLoading } = useCandidates(

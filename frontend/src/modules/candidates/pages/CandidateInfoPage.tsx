@@ -1,4 +1,4 @@
-import { useNavigate, useParams } from "react-router-dom";
+import { Link, useNavigate, useParams } from "react-router-dom";
 import { useCandidate } from "../hooks";
 import { PATHS } from "@/routes/paths";
 
@@ -77,6 +77,20 @@ export function CandidateInfoPage() {
               })}
             </p>
           </div>
+          {candidate.referred_by && (
+            <div>
+              <p className="text-xs text-outline">Referred By</p>
+              <Link
+                to={PATHS.CANDIDATE_DETAIL.replace(
+                  ":id",
+                  String(candidate.referred_by.id)
+                )}
+                className="text-sm font-medium text-primary hover:underline"
+              >
+                {candidate.referred_by.name ?? candidate.referred_by.email}
+              </Link>
+            </div>
+          )}
         </div>
       </div>
 

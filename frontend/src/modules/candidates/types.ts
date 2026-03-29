@@ -34,10 +34,18 @@ export interface CandidateRunSummary {
   created_at: string;
 }
 
+export interface CandidateReferrer {
+  id: number;
+  email: string;
+  name: string | null;
+}
+
 export interface CandidateDetail {
   id: number;
   email: string;
   name: string | null;
+  referred_by_candidate_id: number | null;
+  referred_by: CandidateReferrer | null;
   created_at: string;
   updated_at: string;
   runs: CandidateRunSummary[];

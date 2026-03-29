@@ -165,7 +165,10 @@ class SequenceRunRepository:
                 SequenceRunCandidateEvent.external_thread_id == thread_id,
                 SequenceRunCandidateEvent.external_provider == provider,
             )
-            .options(selectinload(SequenceRunCandidate.candidate))
+            .options(
+                selectinload(SequenceRunCandidate.candidate),
+                selectinload(SequenceRunCandidate.sequence_run),
+            )
         )
         result = await self._db.execute(stmt)
         return result.scalars().first()

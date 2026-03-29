@@ -65,6 +65,18 @@ export function SequenceDetailPage() {
                   day: "numeric",
                   year: "numeric",
                 })}
+                {sequence.referral_list_name && (
+                  <>
+                    {" "}
+                    &middot; Referral list:{" "}
+                    <Link
+                      to={`${PATHS.CANDIDATES}?list_ids=${sequence.referral_list_id}`}
+                      className="font-medium text-secondary hover:underline"
+                    >
+                      {sequence.referral_list_name}
+                    </Link>
+                  </>
+                )}
               </p>
             )}
           </div>

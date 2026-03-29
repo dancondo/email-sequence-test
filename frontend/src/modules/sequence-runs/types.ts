@@ -16,6 +16,7 @@ export type EventType =
   | "reply_received"
   | "reply_classified"
   | "reply_sent"
+  | "referral_detected"
   | "completed"
   | "unsubscribed";
 

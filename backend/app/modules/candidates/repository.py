@@ -84,7 +84,8 @@ class CandidateRepository:
             .options(
                 selectinload(Candidate.sequence_run_candidates)
                 .selectinload(SequenceRunCandidate.sequence_run)
-                .selectinload(SequenceRun.sequence)
+                .selectinload(SequenceRun.sequence),
+                selectinload(Candidate.referred_by),
             )
         )
         result = await self._db.execute(stmt)

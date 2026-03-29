@@ -10,6 +10,17 @@ class Sequence(Base):
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
     name: Mapped[str] = mapped_column(String, nullable=False)
     is_active: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
+    referral_list_id: Mapped[int | None] = mapped_column(
+        Integer, ForeignKey("candidate_list.id", ondelete="SET NULL"), nullable=True
+    )
+
+    referral_list: Mapped["CandidateList | None"] = relationship(
+        "CandidateList", lazy="selectin"
+    )
+
+    @property
+    def referral_list_name(self) -> str | None:
+        return self.referral_list.name if self.referral_list else None
 
     steps: Mapped[list["SequenceStep"]] = relationship(
         "SequenceStep",

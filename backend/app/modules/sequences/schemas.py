@@ -25,17 +25,21 @@ class SequenceStepResponse(BaseModel):
 class SequenceCreate(BaseModel):
     name: str
     steps: list[SequenceStepCreate] = []
+    referral_list_id: int | None = None
 
 
 class SequenceUpdate(BaseModel):
     name: str | None = None
     steps: list[SequenceStepCreate] | None = None
+    referral_list_id: int | None = None
 
 
 class SequenceResponse(BaseModel):
     id: int
     name: str
     is_active: bool
+    referral_list_id: int | None = None
+    referral_list_name: str | None = None
     steps: list[SequenceStepResponse]
     created_at: datetime
     updated_at: datetime
@@ -47,6 +51,8 @@ class SequenceListResponse(BaseModel):
     id: int
     name: str
     is_active: bool
+    referral_list_id: int | None = None
+    referral_list_name: str | None = None
     step_count: int
     run_count: int
     created_at: datetime

@@ -22,6 +22,8 @@ async def list_sequences(
             id=seq.id,
             name=seq.name,
             is_active=seq.is_active,
+            referral_list_id=seq.referral_list_id,
+            referral_list_name=seq.referral_list_name,
             step_count=len(seq.steps),
             run_count=len(seq.runs),
             created_at=seq.created_at,

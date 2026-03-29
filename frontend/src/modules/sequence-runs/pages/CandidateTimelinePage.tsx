@@ -13,6 +13,7 @@ const EVENT_STYLES: Record<EventType, { bg: string; dot: string; label: string }
   reply_received: { bg: "bg-purple-50", dot: "bg-purple-400", label: "Reply Received" },
   reply_classified: { bg: "bg-indigo-50", dot: "bg-indigo-400", label: "Reply Classified" },
   reply_sent: { bg: "bg-teal-50", dot: "bg-teal-400", label: "Reply Email Sent" },
+  referral_detected: { bg: "bg-amber-50", dot: "bg-amber-400", label: "Referral Detected" },
   completed: { bg: "bg-green-50", dot: "bg-green-500", label: "Completed" },
   unsubscribed: { bg: "bg-red-50", dot: "bg-red-500", label: "Unsubscribed" },
 };
@@ -109,6 +110,31 @@ function EventMetadata({ event }: { event: SequenceRunCandidateEvent }) {
           <div className="mt-1 rounded border border-gray-200 bg-white p-2 text-gray-600">
             <div dangerouslySetInnerHTML={{ __html: body }} />
           </div>
+        )}
+      </div>
+    );
+  }
+
+  if (event.event_type === "referral_detected") {
+    const { referred_candidate_email, referred_candidate_name, referral_list_name } =
+      meta as {
+        referred_candidate_email?: string;
+        referred_candidate_name?: string;
+        referral_list_name?: string;
+      };
+    return (
+      <div className="mt-2 space-y-1 text-xs">
+        <p className="text-gray-600">
+          <span className="font-medium">Referred:</span>{" "}
+          {referred_candidate_name
+            ? `${referred_candidate_name} (${referred_candidate_email})`
+            : referred_candidate_email}
+        </p>
+        {referral_list_name && (
+          <p className="text-gray-500">
+            Added to list:{" "}
+            <span className="font-medium">{referral_list_name}</span>
+          </p>
         )}
       </div>
     );

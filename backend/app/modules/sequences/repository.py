@@ -24,9 +24,9 @@ class SequenceRepository:
         return result.scalar_one_or_none()
 
     async def create(
-        self, name: str, steps_data: list[dict]
+        self, name: str, steps_data: list[dict], referral_list_id: int | None = None
     ) -> Sequence:
-        sequence = Sequence(name=name)
+        sequence = Sequence(name=name, referral_list_id=referral_list_id)
         self._db.add(sequence)
         await self._db.flush()
 
@@ -49,9 +49,12 @@ class SequenceRepository:
         sequence: Sequence,
         name: str | None = None,
         steps_data: list[dict] | None = None,
+        referral_list_id: int | None = None,
     ) -> Sequence:
         if name is not None:
             sequence.name = name
+        if referral_list_id is not None:
+            sequence.referral_list_id = referral_list_id
 
         if steps_data is not None:
             await self._db.execute(

@@ -47,6 +47,8 @@ class CandidateDetailResponse(BaseModel):
     id: int
     email: str
     name: str | None
+    referred_by_candidate_id: int | None = None
+    referred_by: CandidateResponse | None = None
     created_at: datetime
     updated_at: datetime
     runs: list[CandidateRunSummary]

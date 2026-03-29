@@ -117,6 +117,13 @@ class WebhookService:
                 confidence=result.confidence,
                 reasoning=result.reasoning,
             )
+
+            if result.referral_email:
+                await self._run_service.handle_referral(
+                    src=src,
+                    referral_email=result.referral_email,
+                    referral_name=result.referral_name,
+                )
         except Exception:
             logger.warning(
                 "Failed to classify reply for candidate %s",

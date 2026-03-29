@@ -32,6 +32,14 @@ CLASSIFY_TOOL = {
                     "type": "string",
                     "description": "Brief explanation of why this intent was chosen.",
                 },
+                "referral_email": {
+                    "type": "string",
+                    "description": "Extract this whenever the reply refers or redirects to another person. The referred person's email address as it appears in the reply text.",
+                },
+                "referral_name": {
+                    "type": "string",
+                    "description": "Extract this whenever the reply refers or redirects to another person. The referred person's name as it appears in the reply text.",
+                },
             },
             "required": ["intent", "confidence", "reasoning"],
         },
@@ -43,7 +51,12 @@ SYSTEM_PROMPT = (
     "Given a candidate's reply to a recruiter outreach email, "
     "classify their intent using the provided tool. "
     "Focus on whether the candidate is open to the opportunity, "
-    "explicitly declining, or giving an ambiguous/unrelated response."
+    "explicitly declining, or giving an ambiguous/unrelated response. "
+    "IMPORTANT: If the candidate mentions or refers another person who might be "
+    "interested or redirects you to someone else (e.g. 'not me, but talk to X "
+    "at x@company.com', 'reach out to jing@example.com'), you MUST extract "
+    "their email into referral_email and their name into referral_name. "
+    "Always populate these fields when any referral is present in the reply."
 )
 
 
@@ -69,4 +82,6 @@ class OpenAIClassificationProvider(ClassificationProvider):
             intent=ReplyIntent(args["intent"]),
             confidence=args["confidence"],
             reasoning=args["reasoning"],
+            referral_email=args.get("referral_email"),
+            referral_name=args.get("referral_name"),
         )

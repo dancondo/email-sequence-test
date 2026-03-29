@@ -20,7 +20,11 @@ class SequenceService:
 
     async def create_sequence(self, data: SequenceCreate) -> Sequence:
         steps_data = [step.model_dump() for step in data.steps]
-        return await self._repository.create(name=data.name, steps_data=steps_data)
+        return await self._repository.create(
+            name=data.name,
+            steps_data=steps_data,
+            referral_list_id=data.referral_list_id,
+        )
 
     async def update_sequence(
         self, sequence_id: int, data: SequenceUpdate
@@ -35,6 +39,7 @@ class SequenceService:
             sequence=sequence,
             name=data.name,
             steps_data=steps_data,
+            referral_list_id=data.referral_list_id,
         )
 
     async def delete_sequence(self, sequence_id: int) -> None:

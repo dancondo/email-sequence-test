@@ -22,6 +22,17 @@ class CandidateService:
             raise HTTPException(status_code=404, detail="Candidate not found")
         return candidate
 
+    async def get_or_create_by_email(
+        self, email: str, name: str | None = None
+    ) -> Candidate:
+        existing = await self._repository.get_by_email(email)
+        if existing:
+            return existing
+        created, _ = await self._repository.bulk_create_or_get(
+            [{"email": email, "name": name}]
+        )
+        return created[0]
+
     async def upload_csv(self, file: UploadFile) -> CsvUploadResponse:
         if not file.filename or not file.filename.endswith(".csv"):
             raise HTTPException(
@@ -114,10 +125,22 @@ class CandidateService:
                 "created_at": src.created_at,
             })
 
+        referred_by = None
+        if candidate.referred_by:
+            referred_by = {
+                "id": candidate.referred_by.id,
+                "email": candidate.referred_by.email,
+                "name": candidate.referred_by.name,
+                "created_at": candidate.referred_by.created_at,
+                "updated_at": candidate.referred_by.updated_at,
+            }
+
         return CandidateDetailResponse(
             id=candidate.id,
             email=candidate.email,
             name=candidate.name,
+            referred_by_candidate_id=candidate.referred_by_candidate_id,
+            referred_by=referred_by,
             created_at=candidate.created_at,
             updated_at=candidate.updated_at,
             runs=runs,

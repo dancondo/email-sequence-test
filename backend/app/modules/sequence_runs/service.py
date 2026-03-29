@@ -3,6 +3,7 @@ from datetime import datetime
 
 from fastapi import HTTPException
 
+from app.modules.candidate_lists.service import CandidateListService
 from app.modules.candidates.service import CandidateService
 from app.modules.classification.schemas import ReplyIntent
 from app.modules.email_integration.models import IntegrationProvider
@@ -36,11 +37,13 @@ class SequenceRunService:
         sequence_service: SequenceService,
         candidate_service: CandidateService,
         email_service: EmailIntegrationService,
+        candidate_list_service: CandidateListService,
     ) -> None:
         self._run_repo = run_repository
         self._sequence_service = sequence_service
         self._candidate_service = candidate_service
         self._email_service = email_service
+        self._candidate_list_service = candidate_list_service
 
     async def create_run(self, sequence_id: int) -> SequenceRun:
         await self._sequence_service.get_sequence(sequence_id)
@@ -415,3 +418,39 @@ class SequenceRunService:
         new_status = _INTENT_TO_STATUS.get(ReplyIntent(intent))
         if new_status:
             await self._run_repo.update_candidate_status(src, new_status)
+
+    async def handle_referral(
+        self,
+        src: SequenceRunCandidate,
+        referral_email: str,
+        referral_name: str | None,
+    ) -> None:
+        sequence = await self._sequence_service.get_sequence(
+            src.sequence_run.sequence_id
+        )
+
+        referred_candidate = await self._candidate_service.get_or_create_by_email(
+            email=referral_email, name=referral_name
+        )
+        referred_candidate.referred_by_candidate_id = src.candidate_id
+        await self._run_repo._db.commit()
+        await self._run_repo._db.refresh(referred_candidate)
+
+        referral_list_name = None
+        if sequence.referral_list_id:
+            await self._candidate_list_service.add_candidates_to_list(
+                sequence.referral_list_id, [referred_candidate.id]
+            )
+            referral_list = sequence.referral_list
+            referral_list_name = referral_list.name if referral_list else None
+
+        await self._run_repo.add_event(
+            sequence_run_candidate_id=src.id,
+            event_type=EventType.REFERRAL_DETECTED,
+            extra={
+                "referred_candidate_id": referred_candidate.id,
+                "referred_candidate_email": referred_candidate.email,
+                "referred_candidate_name": referred_candidate.name,
+                "referral_list_name": referral_list_name,
+            },
+        )

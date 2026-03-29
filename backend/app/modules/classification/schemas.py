@@ -13,3 +13,5 @@ class ClassificationResult:
     intent: ReplyIntent
     confidence: float
     reasoning: str
+    referral_email: str | None = None
+    referral_name: str | None = None

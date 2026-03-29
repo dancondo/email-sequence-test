@@ -3,6 +3,7 @@ import { Link, useNavigate, useParams } from "react-router-dom";
 import { RichTextEditor } from "@/shared/components/RichTextEditor";
 import { useSequence, useCreateSequence, useUpdateSequence } from "../hooks";
 import { createRun } from "@/modules/sequence-runs/api";
+import { useCandidateLists } from "@/modules/candidate-lists/hooks";
 import { SequenceStepInput } from "../types";
 import { PATHS } from "@/routes/paths";
 
@@ -26,7 +27,9 @@ export function SequenceEditorPage() {
   const [steps, setSteps] = useState<SequenceStepInput[]>([
     { ...EMPTY_STEP },
   ]);
+  const [referralListId, setReferralListId] = useState<number | null>(null);
   const [initialized, setInitialized] = useState(false);
+  const { data: candidateLists } = useCandidateLists();
 
   useEffect(() => {
     if (isEdit && existing && !initialized) {
@@ -38,6 +41,7 @@ export function SequenceEditorPage() {
           delay_minutes: s.delay_minutes,
         }))
       );
+      setReferralListId(existing.referral_list_id);
       setInitialized(true);
     }
   }, [isEdit, existing, initialized]);
@@ -68,10 +72,14 @@ export function SequenceEditorPage() {
     if (isEdit) {
       await updateMutation.mutateAsync({
         id: sequenceId,
-        data: { name, steps },
+        data: { name, steps, referral_list_id: referralListId },
       });
     } else {
-      const created = await createMutation.mutateAsync({ name, steps });
+      const created = await createMutation.mutateAsync({
+        name,
+        steps,
+        referral_list_id: referralListId,
+      });
       seqId = created.id;
     }
 
@@ -165,6 +173,30 @@ export function SequenceEditorPage() {
           placeholder="e.g., Q4 Engineering Outreach - Mid Level"
           className="w-full rounded-lg border border-outline-variant bg-surface px-3 py-2.5 text-sm text-on-surface placeholder:text-outline focus:border-secondary focus:outline-none focus:ring-1 focus:ring-secondary"
         />
+
+        <label className="mb-1.5 mt-4 block text-xs font-medium uppercase tracking-wider text-on-surface-variant">
+          Referral List (optional)
+        </label>
+        <select
+          value={referralListId ?? ""}
+          onChange={(e) =>
+            setReferralListId(
+              e.target.value ? parseInt(e.target.value, 10) : null
+            )
+          }
+          className="w-full rounded-lg border border-outline-variant bg-surface px-3 py-2.5 text-sm text-on-surface focus:border-secondary focus:outline-none focus:ring-1 focus:ring-secondary"
+        >
+          <option value="">None — referrals won't be added to a list</option>
+          {candidateLists?.map((list) => (
+            <option key={list.id} value={list.id}>
+              {list.name}
+            </option>
+          ))}
+        </select>
+        <p className="mt-1 text-xs text-on-surface-variant">
+          When a candidate refers someone, the referral will be added to this
+          list automatically.
+        </p>
       </div>
 
       {/* Steps */}
