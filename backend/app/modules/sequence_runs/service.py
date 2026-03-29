@@ -140,6 +140,9 @@ class SequenceRunService:
                 detail="Run must have at least one candidate to start",
             )
 
+        # Eagerly resolve emails before any commits invalidate lazy state
+        candidate_emails = {src.id: src.candidate.email for src in candidates}
+
         account = await self._email_service.get_status()
         if not account:
             raise HTTPException(
@@ -184,7 +187,7 @@ class SequenceRunService:
                 try:
                     result = self._email_service.send_message(
                         grant_id=account.grant_id,
-                        to_email=src.candidate.email,
+                        to_email=candidate_emails[src.id],
                         subject=step["subject"],
                         body=step["body"],
                         send_at=send_at,
