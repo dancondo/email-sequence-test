@@ -5,7 +5,7 @@ from openai import OpenAI
 
 from app.core.config import settings
 from app.modules.classification.providers.base import ClassificationProvider
-from app.modules.classification.schemas import ClassificationResult
+from app.modules.classification.schemas import ClassificationResult, ReplyIntent
 
 logger = logging.getLogger(__name__)
 
@@ -66,7 +66,7 @@ class OpenAIClassificationProvider(ClassificationProvider):
         args = json.loads(tool_call.function.arguments)
 
         return ClassificationResult(
-            intent=args["intent"],
+            intent=ReplyIntent(args["intent"]),
             confidence=args["confidence"],
             reasoning=args["reasoning"],
         )

@@ -35,6 +35,7 @@ class EmailIntegrationService:
         subject: str,
         body: str,
         send_at: int | None = None,
+        reply_to_message_id: str | None = None,
     ) -> SendResult:
         return self._provider.send_message(
             grant_id=grant_id,
@@ -42,6 +43,7 @@ class EmailIntegrationService:
             subject=subject,
             body=body,
             send_at=send_at,
+            reply_to_message_id=reply_to_message_id,
         )
 
     def cancel_scheduled_message(self, grant_id: str, schedule_id: str) -> bool:

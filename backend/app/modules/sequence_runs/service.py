@@ -9,12 +9,14 @@ from app.modules.email_integration.service import EmailIntegrationService
 from app.modules.sequence_runs.models import (
     EventType,
     SequenceRun,
+    SequenceRunCandidateEvent,
     SequenceRunCandidateStatus,
     SequenceRunStatus,
 )
 from app.modules.sequence_runs.repository import SequenceRunRepository
 from app.modules.sequence_runs.schemas import (
     AddCandidatesResponse,
+    SendReplyResponse,
     SequenceStartResponse,
 )
 from app.modules.sequences.service import SequenceService
@@ -220,3 +222,65 @@ class SequenceRunService:
             message=f"Sequence run started with {enrollments_started} candidates",
             enrollments_started=enrollments_started,
         )
+
+    async def send_reply(
+        self, sequence_id: int, run_id: int, candidate_id: int, body: str
+    ) -> SequenceRunCandidateEvent:
+        await self.get_run(sequence_id, run_id)
+
+        src = await self._run_repo.get_candidate(run_id, candidate_id)
+        if not src:
+            raise HTTPException(
+                status_code=404, detail="Candidate not found in this run"
+            )
+
+        if src.status != SequenceRunCandidateStatus.REPLIED:
+            raise HTTPException(
+                status_code=409,
+                detail="Can only reply to candidates who have replied first",
+            )
+
+        account = await self._email_service.get_status()
+        if not account:
+            raise HTTPException(
+                status_code=400,
+                detail="No active email account connected",
+            )
+
+        reply_event = await self._run_repo.get_last_reply_received_event(src.id)
+        if not reply_event:
+            raise HTTPException(
+                status_code=409,
+                detail="No reply received event found for this candidate",
+            )
+
+        original_subject = (reply_event.extra or {}).get("subject", "")
+        subject = (
+            original_subject
+            if original_subject.lower().startswith("re:")
+            else f"Re: {original_subject}"
+        )
+        to_email = src.candidate.email
+
+        result = self._email_service.send_message(
+            grant_id=account.grant_id,
+            to_email=to_email,
+            subject=subject,
+            body=body,
+            reply_to_message_id=reply_event.external_message_id,
+        )
+
+        event = await self._run_repo.add_event(
+            sequence_run_candidate_id=src.id,
+            event_type=EventType.REPLY_SENT,
+            external_message_id=result.message_id,
+            external_thread_id=result.thread_id,
+            external_provider=IntegrationProvider.NYLAS,
+            extra={
+                "subject": subject,
+                "body": body,
+                "to_email": to_email,
+            },
+        )
+
+        return event

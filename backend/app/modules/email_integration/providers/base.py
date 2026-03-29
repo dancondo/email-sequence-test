@@ -34,6 +34,7 @@ class EmailProvider(ABC):
         subject: str,
         body: str,
         send_at: int | None = None,
+        reply_to_message_id: str | None = None,
     ) -> SendResult:
         """Send an email. When send_at (unix timestamp) is provided, schedule for later delivery."""
         ...

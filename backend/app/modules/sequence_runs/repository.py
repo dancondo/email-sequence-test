@@ -226,6 +226,22 @@ class SequenceRunRepository:
         await self._db.refresh(event)
         return event
 
+    async def get_last_reply_received_event(
+        self, sequence_run_candidate_id: int
+    ) -> SequenceRunCandidateEvent | None:
+        stmt = (
+            select(SequenceRunCandidateEvent)
+            .where(
+                SequenceRunCandidateEvent.sequence_run_candidate_id
+                == sequence_run_candidate_id,
+                SequenceRunCandidateEvent.event_type == EventType.REPLY_RECEIVED,
+            )
+            .order_by(SequenceRunCandidateEvent.occurred_at.desc())
+            .limit(1)
+        )
+        result = await self._db.execute(stmt)
+        return result.scalar_one_or_none()
+
     async def get_events(
         self, sequence_run_candidate_id: int
     ) -> list[SequenceRunCandidateEvent]:

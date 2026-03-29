@@ -38,6 +38,7 @@ class NylasEmailProvider(EmailProvider):
         subject: str,
         body: str,
         send_at: int | None = None,
+        reply_to_message_id: str | None = None,
     ) -> SendResult:
         request_body = {
             "to": [{"email": to_email}],
@@ -46,6 +47,8 @@ class NylasEmailProvider(EmailProvider):
         }
         if send_at is not None:
             request_body["send_at"] = send_at
+        if reply_to_message_id is not None:
+            request_body["reply_to_message_id"] = reply_to_message_id
 
         message, _ = self._client.messages.send(grant_id, request_body)
 

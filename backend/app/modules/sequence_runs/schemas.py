@@ -85,3 +85,12 @@ class AddCandidatesResponse(BaseModel):
 class SequenceStartResponse(BaseModel):
     message: str
     enrollments_started: int
+
+
+class SendReplyRequest(BaseModel):
+    body: str
+
+
+class SendReplyResponse(BaseModel):
+    message: str
+    event: SequenceRunCandidateEventResponse

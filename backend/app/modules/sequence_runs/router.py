@@ -5,6 +5,8 @@ from app.modules.sequence_runs.schemas import (
     AddCandidatesRequest,
     AddCandidatesResponse,
     CandidateTimelineResponse,
+    SendReplyRequest,
+    SendReplyResponse,
     SequenceRunCandidateEventResponse,
     SequenceRunCandidateResponse,
     SequenceRunDetailResponse,
@@ -107,6 +109,37 @@ async def remove_candidate(
     service: SequenceRunService = Depends(get_sequence_run_service),
 ):
     await service.remove_candidate(sequence_id, run_id, candidate_id)
+
+
+@router.post(
+    "/{run_id}/candidates/{candidate_id}/reply",
+    response_model=SendReplyResponse,
+)
+async def send_reply(
+    sequence_id: int,
+    run_id: int,
+    candidate_id: int,
+    data: SendReplyRequest,
+    service: SequenceRunService = Depends(get_sequence_run_service),
+):
+    event = await service.send_reply(sequence_id, run_id, candidate_id, data.body)
+    return SendReplyResponse(
+        message="Reply sent successfully",
+        event=SequenceRunCandidateEventResponse(
+            id=event.id,
+            sequence_run_candidate_id=event.sequence_run_candidate_id,
+            event_type=event.event_type.value,
+            step_order=event.step_order,
+            external_message_id=event.external_message_id,
+            external_schedule_id=event.external_schedule_id,
+            external_provider=(
+                event.external_provider.value if event.external_provider else None
+            ),
+            metadata=event.extra,
+            occurred_at=event.occurred_at,
+            created_at=event.created_at,
+        ),
+    )
 
 
 @router.get(
