@@ -37,6 +37,7 @@ class EventType(str, enum.Enum):
     EMAIL_SCHEDULED = "email_scheduled"
     EMAIL_SENT = "email_sent"
     EMAIL_FAILED = "email_failed"
+    EMAIL_CANCELED = "email_canceled"
     REPLY_RECEIVED = "reply_received"
     REPLY_CLASSIFIED = "reply_classified"
     REPLY_SENT = "reply_sent"

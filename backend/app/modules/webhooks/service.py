@@ -44,18 +44,24 @@ class WebhookService:
             notification.grant_id, notification.message_id
         )
 
-        if not message.thread_id:
-            logger.warning(
-                "Message %s has no thread_id, skipping", notification.message_id
+        src = None
+        if message.thread_id:
+            src = await self._run_service.get_candidate_by_thread_id(
+                message.thread_id, IntegrationProvider.NYLAS
             )
-            return
 
-        src = await self._run_service.get_candidate_by_thread_id(
-            message.thread_id, IntegrationProvider.NYLAS
-        )
+        # Fallback: look up by message_id when thread_id is missing or
+        # didn't match any stored events (common for scheduled sends).
+        if not src:
+            src = await self._run_service.get_candidate_by_message_id(
+                message.external_message_id, IntegrationProvider.NYLAS
+            )
+
         if not src:
             logger.info(
-                "No enrollment found for thread_id=%s, skipping", message.thread_id
+                "No enrollment found for message_id=%s thread_id=%s, skipping",
+                notification.message_id,
+                message.thread_id,
             )
             return
 
@@ -72,7 +78,12 @@ class WebhookService:
         return from_email.lower() != account.email.lower()
 
     async def _process_reply(self, src, notification, message) -> None:
-        if src.status == SequenceRunCandidateStatus.REPLIED:
+        terminal_statuses = {
+            SequenceRunCandidateStatus.REPLIED,
+            SequenceRunCandidateStatus.INTERESTED,
+            SequenceRunCandidateStatus.NOT_INTERESTED,
+        }
+        if src.status in terminal_statuses:
             return
 
         already_exists = await self._run_service.has_event(
@@ -101,6 +112,15 @@ class WebhookService:
         )
         if already_exists:
             return
+
+        # Backfill thread_id on the original EMAIL_SCHEDULED event so future
+        # inbound replies on this thread can be matched to the candidate.
+        if message.thread_id:
+            await self._run_service.backfill_thread_id(
+                sequence_run_candidate_id=src.id,
+                external_message_id=message.external_message_id,
+                thread_id=message.thread_id,
+            )
 
         await self._run_service.record_email_sent(
             src=src,
@@ -145,9 +165,14 @@ class WebhookService:
                     grant_id=grant_id,
                     schedule_id=event.external_schedule_id,
                 )
+                await self._run_service.add_canceled_event(
+                    sequence_run_candidate_id=event.sequence_run_candidate_id,
+                    step_order=event.step_order,
+                    external_schedule_id=event.external_schedule_id,
+                )
             except Exception:
                 logger.warning(
                     "Failed to cancel scheduled message %s",
-                    event.external_schedule_id,
+                    event.external_message_id,
                     exc_info=True,
                 )

@@ -226,7 +226,11 @@ class SequenceRunService:
                         external_schedule_id=result.schedule_id,
                         external_thread_id=result.thread_id,
                         external_provider=IntegrationProvider.NYLAS,
-                        extra={"subject": step["subject"], "body": step["body"]},
+                        extra={
+                            "subject": step["subject"],
+                            "body": step["body"],
+                            "send_at": send_at,
+                        },
                     )
                 except Exception as e:
                     await self._run_repo.add_event(
@@ -336,6 +340,13 @@ class SequenceRunService:
     ) -> SequenceRunCandidate | None:
         return await self._run_repo.get_candidate_by_thread_id(thread_id, provider)
 
+    async def get_candidate_by_message_id(
+        self, message_id: str, provider: IntegrationProvider
+    ) -> SequenceRunCandidate | None:
+        return await self._run_repo.get_candidate_by_external_message_id(
+            message_id, provider
+        )
+
     async def has_event(
         self,
         sequence_run_candidate_id: int,
@@ -382,8 +393,15 @@ class SequenceRunService:
         scheduled_event = await self._run_repo.get_scheduled_event_by_message_id(
             src.id, external_message_id
         )
-        step_order = scheduled_event.step_order if scheduled_event else None
 
+        # Fallback: if message_id lookup fails (e.g. Nylas assigned a new ID
+        # on delivery), find the next undelivered scheduled step.
+        if scheduled_event is None:
+            scheduled_event = (
+                await self._run_repo.get_next_undelivered_scheduled_event(src.id)
+            )
+
+        step_order = scheduled_event.step_order if scheduled_event else None
         extra = scheduled_event.extra if scheduled_event and scheduled_event.extra else None
 
         await self._run_repo.add_event(
@@ -398,6 +416,32 @@ class SequenceRunService:
 
         if step_order is not None:
             await self._run_repo.update_candidate_step_order(src, step_order)
+
+    async def add_canceled_event(
+        self,
+        sequence_run_candidate_id: int,
+        step_order: int | None,
+        external_schedule_id: str,
+    ) -> None:
+        await self._run_repo.add_event(
+            sequence_run_candidate_id=sequence_run_candidate_id,
+            event_type=EventType.EMAIL_CANCELED,
+            step_order=step_order,
+            extra={"canceled_schedule_id": external_schedule_id},
+        )
+
+    async def backfill_thread_id(
+        self,
+        sequence_run_candidate_id: int,
+        external_message_id: str,
+        thread_id: str,
+    ) -> None:
+        await self._run_repo.backfill_event_thread_id(
+            sequence_run_candidate_id, external_message_id, thread_id
+        )
+
+    async def clear_schedule_id(self, event_id: int) -> None:
+        await self._run_repo.clear_schedule_id(event_id)
 
     async def get_pending_scheduled_events(
         self, sequence_run_candidate_id: int

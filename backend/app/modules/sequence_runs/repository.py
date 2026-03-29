@@ -176,6 +176,18 @@ class SequenceRunRepository:
     async def get_pending_scheduled_events(
         self, sequence_run_candidate_id: int
     ) -> list[SequenceRunCandidateEvent]:
+        # Subquery: step_orders that already have an EMAIL_SENT event
+        sent_steps = (
+            select(SequenceRunCandidateEvent.step_order)
+            .where(
+                SequenceRunCandidateEvent.sequence_run_candidate_id
+                == sequence_run_candidate_id,
+                SequenceRunCandidateEvent.event_type == EventType.EMAIL_SENT,
+                SequenceRunCandidateEvent.step_order.isnot(None),
+            )
+            .scalar_subquery()
+        )
+
         stmt = (
             select(SequenceRunCandidateEvent)
             .where(
@@ -183,6 +195,7 @@ class SequenceRunRepository:
                 == sequence_run_candidate_id,
                 SequenceRunCandidateEvent.event_type == EventType.EMAIL_SCHEDULED,
                 SequenceRunCandidateEvent.external_schedule_id.isnot(None),
+                SequenceRunCandidateEvent.step_order.notin_(sent_steps),
             )
         )
         result = await self._db.execute(stmt)
@@ -244,6 +257,68 @@ class SequenceRunRepository:
                 SequenceRunCandidateEvent.event_type == EventType.EMAIL_SCHEDULED,
                 SequenceRunCandidateEvent.external_message_id == external_message_id,
             )
+            .limit(1)
+        )
+        result = await self._db.execute(stmt)
+        return result.scalar_one_or_none()
+
+    async def clear_schedule_id(self, event_id: int) -> None:
+        stmt = (
+            select(SequenceRunCandidateEvent)
+            .where(SequenceRunCandidateEvent.id == event_id)
+        )
+        result = await self._db.execute(stmt)
+        event = result.scalar_one_or_none()
+        if event:
+            event.external_schedule_id = None
+            await self._db.commit()
+
+    async def backfill_event_thread_id(
+        self,
+        sequence_run_candidate_id: int,
+        external_message_id: str,
+        thread_id: str,
+    ) -> None:
+        stmt = (
+            select(SequenceRunCandidateEvent)
+            .where(
+                SequenceRunCandidateEvent.sequence_run_candidate_id
+                == sequence_run_candidate_id,
+                SequenceRunCandidateEvent.external_message_id == external_message_id,
+                SequenceRunCandidateEvent.external_thread_id.is_(None),
+            )
+        )
+        result = await self._db.execute(stmt)
+        events = list(result.scalars().all())
+        for event in events:
+            event.external_thread_id = thread_id
+        if events:
+            await self._db.commit()
+
+    async def get_next_undelivered_scheduled_event(
+        self, sequence_run_candidate_id: int
+    ) -> SequenceRunCandidateEvent | None:
+        sent_steps = (
+            select(SequenceRunCandidateEvent.step_order)
+            .where(
+                SequenceRunCandidateEvent.sequence_run_candidate_id
+                == sequence_run_candidate_id,
+                SequenceRunCandidateEvent.event_type == EventType.EMAIL_SENT,
+                SequenceRunCandidateEvent.step_order.isnot(None),
+            )
+            .scalar_subquery()
+        )
+
+        stmt = (
+            select(SequenceRunCandidateEvent)
+            .where(
+                SequenceRunCandidateEvent.sequence_run_candidate_id
+                == sequence_run_candidate_id,
+                SequenceRunCandidateEvent.event_type == EventType.EMAIL_SCHEDULED,
+                SequenceRunCandidateEvent.step_order.isnot(None),
+                SequenceRunCandidateEvent.step_order.notin_(sent_steps),
+            )
+            .order_by(SequenceRunCandidateEvent.step_order.asc())
             .limit(1)
         )
         result = await self._db.execute(stmt)

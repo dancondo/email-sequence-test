@@ -1,3 +1,7 @@
+import json
+import logging
+
+import requests
 from nylas import Client as NylasClient
 
 from app.core.config import settings
@@ -6,6 +10,9 @@ from app.modules.email_integration.providers.base import (
     OAuthResult,
     SendResult,
 )
+
+
+logger = logging.getLogger(__name__)
 
 
 class NylasEmailProvider(EmailProvider):
@@ -50,17 +57,28 @@ class NylasEmailProvider(EmailProvider):
         if reply_to_message_id is not None:
             request_body["reply_to_message_id"] = reply_to_message_id
 
-        message, _ = self._client.messages.send(grant_id, request_body)
-
-        schedule_id = getattr(message, "schedule_id", None)
-        thread_id = getattr(message, "thread_id", None)
+        # Bypass the SDK's Message deserialization which drops schedule_id.
+        # Hit the Nylas API directly to get the raw JSON response.
+        http = self._client.messages._http_client
+        resp = requests.post(
+            f"{http.api_server}/v3/grants/{grant_id}/messages/send",
+            headers={
+                "Authorization": f"Bearer {http.api_key}",
+                "Content-Type": "application/json",
+            },
+            data=json.dumps(request_body, ensure_ascii=False).encode("utf-8"),
+            timeout=http.timeout,
+        )
+        resp.raise_for_status()
+        logger.info("Nylas send raw response: %s", resp.json())
+        data = resp.json().get("data", {})
 
         return SendResult(
-            message_id=message.id,
-            schedule_id=schedule_id,
-            thread_id=thread_id,
+            message_id=data.get("id", ""),
+            schedule_id=data.get("schedule_id"),
+            thread_id=data.get("thread_id"),
         )
 
     def cancel_scheduled_message(self, grant_id: str, schedule_id: str) -> bool:
-        self._client.messages.scheduled_messages.destroy(grant_id, schedule_id)
+        self._client.messages.stop_scheduled_message(grant_id, schedule_id)
         return True

@@ -54,7 +54,8 @@ class NylasWebhookProvider(WebhookProvider):
         ]
 
     def fetch_message(self, grant_id: str, message_id: str) -> ParsedReply:
-        message, _ = self._client.messages.find(grant_id, message_id)
+        response = self._client.messages.find(grant_id, message_id)
+        message = response.data
         from_email = ""
         if message.from_:
             sender = message.from_[0]

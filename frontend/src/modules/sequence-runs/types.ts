@@ -13,6 +13,7 @@ export type EventType =
   | "email_scheduled"
   | "email_sent"
   | "email_failed"
+  | "email_canceled"
   | "reply_received"
   | "reply_classified"
   | "reply_sent"

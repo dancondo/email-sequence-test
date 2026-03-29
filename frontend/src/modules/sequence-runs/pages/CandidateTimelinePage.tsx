@@ -10,6 +10,7 @@ const EVENT_STYLES: Record<EventType, { bg: string; dot: string; label: string }
   email_scheduled: { bg: "bg-blue-50", dot: "bg-blue-400", label: "Email Scheduled" },
   email_sent: { bg: "bg-green-50", dot: "bg-green-400", label: "Email Sent" },
   email_failed: { bg: "bg-red-50", dot: "bg-red-400", label: "Email Failed" },
+  email_canceled: { bg: "bg-yellow-50", dot: "bg-yellow-400", label: "Email Canceled" },
   reply_received: { bg: "bg-purple-50", dot: "bg-purple-400", label: "Reply Received" },
   reply_classified: { bg: "bg-indigo-50", dot: "bg-indigo-400", label: "Reply Classified" },
   reply_sent: { bg: "bg-teal-50", dot: "bg-teal-400", label: "Reply Email Sent" },
@@ -197,12 +198,25 @@ function EventMetadata({ event }: { event: SequenceRunCandidateEvent }) {
     );
   }
 
-  // Fallback: raw JSON for any other event types with metadata
-  return (
-    <pre className="mt-1 overflow-auto text-xs text-gray-500">
-      {JSON.stringify(meta, null, 2)}
-    </pre>
-  );
+  if (event.event_type === "email_canceled") {
+    const { canceled_schedule_id } = meta as { canceled_schedule_id?: string };
+    if (!canceled_schedule_id) return null;
+    return (
+      <p className="mt-1 text-xs text-gray-500">
+        Schedule <span className="font-mono">{canceled_schedule_id}</span> canceled
+      </p>
+    );
+  }
+
+  if (event.event_type === "email_failed") {
+    const { error } = meta as { error?: string };
+    if (!error) return null;
+    return (
+      <p className="mt-1 text-xs text-red-500">{error}</p>
+    );
+  }
+
+  return null;
 }
 
 export function CandidateTimelinePage() {

@@ -1,5 +1,9 @@
+import logging
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+
+logging.basicConfig(level=logging.INFO)
 
 from app.modules.candidate_lists.router import router as candidate_lists_router
 from app.modules.candidates.router import router as candidates_router
