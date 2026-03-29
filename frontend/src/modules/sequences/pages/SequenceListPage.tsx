@@ -111,7 +111,7 @@ export function SequenceListPage() {
                   <button
                     onClick={() =>
                       navigate(
-                        PATHS.SEQUENCE_RUNS.replace(":id", String(seq.id))
+                        PATHS.SEQUENCE_DETAIL.replace(":id", String(seq.id))
                       )
                     }
                     className="text-xs font-semibold uppercase tracking-wider text-secondary hover:text-secondary-container"
