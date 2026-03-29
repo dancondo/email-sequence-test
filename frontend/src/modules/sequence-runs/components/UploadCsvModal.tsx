@@ -20,7 +20,7 @@ export function UploadCsvModal({
 
   return (
     <Modal open={open} onClose={onClose} title="Upload CSV">
-      <CandidateUpload onUploadComplete={handleComplete} />
+      <CandidateUpload onUploadComplete={handleComplete} onCancel={onClose} />
     </Modal>
   );
 }

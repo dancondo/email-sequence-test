@@ -5,9 +5,10 @@ import { CsvUploadResult } from "../types";
 
 interface CandidateUploadProps {
   onUploadComplete: (result: CsvUploadResult) => void;
+  onCancel?: () => void;
 }
 
-export function CandidateUpload({ onUploadComplete }: CandidateUploadProps) {
+export function CandidateUpload({ onUploadComplete, onCancel }: CandidateUploadProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const uploadMutation = useUploadCandidates();
   const assignMutation = useAssignCandidatesToList();
@@ -76,18 +77,14 @@ export function CandidateUpload({ onUploadComplete }: CandidateUploadProps) {
   const isPending = uploadMutation.isPending || assignMutation.isPending;
 
   return (
-    <div className="rounded-lg border border-gray-200 bg-white p-4 shadow-sm">
-      <h2 className="mb-3 text-lg font-semibold text-gray-800">
-        Upload Candidates
-      </h2>
-
-      <div className="mb-3">
+    <div>
+      <div className="mb-4">
         <label
           htmlFor="list-name"
-          className="mb-1 block text-sm font-medium text-gray-700"
+          className="mb-1 block text-sm font-medium text-on-surface"
         >
           List Name{" "}
-          <span className="font-normal text-gray-400">(optional)</span>
+          <span className="font-normal text-on-surface-variant">(optional)</span>
         </label>
         <input
           id="list-name"
@@ -96,7 +93,7 @@ export function CandidateUpload({ onUploadComplete }: CandidateUploadProps) {
           value={listInput}
           onChange={(e) => setListInput(e.target.value)}
           placeholder="Select or type a new list name"
-          className="w-full rounded border border-gray-300 px-3 py-1.5 text-sm text-gray-800 placeholder-gray-400 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+          className="w-full rounded-lg border border-outline-variant bg-surface-container-lowest px-3 py-2 text-sm text-on-surface placeholder-outline focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
         />
         <datalist id="candidate-lists">
           {lists?.map((list) => (
@@ -105,36 +102,32 @@ export function CandidateUpload({ onUploadComplete }: CandidateUploadProps) {
         </datalist>
       </div>
 
-      <div className="flex items-center gap-3">
+      <div>
         <input
           ref={fileInputRef}
           type="file"
           accept=".csv"
           onChange={handleFileChange}
-          className="text-sm text-gray-500 file:mr-3 file:rounded file:border-0 file:bg-blue-50 file:px-3 file:py-1.5 file:text-sm file:font-medium file:text-blue-700 hover:file:bg-blue-100"
+          className="text-sm text-on-surface-variant file:mr-3 file:rounded-lg file:border file:border-outline-variant file:bg-surface-container-low file:px-3 file:py-1.5 file:text-sm file:font-medium file:text-on-surface hover:file:bg-surface-container-high"
         />
-        <button
-          onClick={handleUpload}
-          disabled={!selectedFile || isPending}
-          className="rounded bg-blue-600 px-4 py-1.5 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50"
-        >
-          {isPending ? "Uploading..." : "Upload"}
-        </button>
+        <p className="mt-2 text-xs text-on-surface-variant">
+          CSV must have an "email" column. Optional: "name" column.
+        </p>
       </div>
 
       {uploadError && (
-        <p className="mt-2 text-sm text-red-600">{uploadError}</p>
+        <p className="mt-3 text-sm text-error">{uploadError}</p>
       )}
 
       {uploadResult && (
-        <div className="mt-3 rounded border border-green-200 bg-green-50 px-3 py-2 text-sm text-green-700">
+        <div className="mt-4 rounded-lg border border-secondary/20 bg-secondary/5 px-4 py-3 text-sm text-on-surface">
           <p>
             Processed {uploadResult.total_rows} rows:{" "}
             {uploadResult.candidates_created} new,{" "}
             {uploadResult.candidates_existing} existing
           </p>
           {uploadResult.errors.length > 0 && (
-            <ul className="mt-1 list-inside list-disc text-amber-600">
+            <ul className="mt-1 list-inside list-disc text-error">
               {uploadResult.errors.map((err, i) => (
                 <li key={i}>{err}</li>
               ))}
@@ -143,9 +136,24 @@ export function CandidateUpload({ onUploadComplete }: CandidateUploadProps) {
         </div>
       )}
 
-      <p className="mt-2 text-xs text-gray-400">
-        CSV must have an "email" column. Optional: "name" column.
-      </p>
+      {/* Footer */}
+      <div className="mt-4 flex items-center justify-end gap-3">
+        {onCancel && (
+          <button
+            onClick={onCancel}
+            className="rounded-lg border border-outline-variant px-4 py-2 text-sm font-medium text-on-surface hover:bg-surface-container-low"
+          >
+            Cancel
+          </button>
+        )}
+        <button
+          onClick={handleUpload}
+          disabled={!selectedFile || isPending}
+          className="rounded-lg bg-primary px-4 py-2 text-sm font-medium text-on-primary hover:bg-primary/90 disabled:opacity-50"
+        >
+          {isPending ? "Uploading..." : "Upload"}
+        </button>
+      </div>
     </div>
   );
 }
