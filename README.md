@@ -127,7 +127,13 @@ NYLAS_CLIENT_ID=<your id>
 NYLAS_API_KEY=<your key>
 ```
 
-### 2. Start the Stack
+### 2. Register the OAuth Callback URI in Nylas
+
+Add your `NYLAS_REDIRECT_URI` (default: `http://localhost:9090/api/email-integration/callback`) to the Nylas dashboard callback URIs:
+
+https://dashboard-v3.nylas.com/applications/0a63d63b-9ec9-4a6e-b6ad-55cd72692598/hosted-authentication/callback-uris
+
+### 3. Start the Stack
 
 **Without Nylas webhooks (basic mode):**
 
@@ -143,7 +149,7 @@ make up-tunnel
 
 `make up-tunnel` starts a Cloudflare tunnel, registers a webhook on Nylas, and injects the webhook secret into the backend service automatically.
 
-### 3. Run Migrations (first time only, or whenever you create a new migration)
+### 4. Run Migrations (first time only, or whenever you create a new migration)
 
 In a separate terminal:
 
@@ -151,7 +157,7 @@ In a separate terminal:
 make migrate
 ```
 
-### 4. Access the App
+### 5. Access the App
 
 | Service | URL |
 |---------|-----|
