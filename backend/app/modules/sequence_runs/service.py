@@ -226,6 +226,7 @@ class SequenceRunService:
                         external_schedule_id=result.schedule_id,
                         external_thread_id=result.thread_id,
                         external_provider=IntegrationProvider.NYLAS,
+                        extra={"subject": step["subject"], "body": step["body"]},
                     )
                 except Exception as e:
                     await self._run_repo.add_event(
@@ -383,6 +384,8 @@ class SequenceRunService:
         )
         step_order = scheduled_event.step_order if scheduled_event else None
 
+        extra = scheduled_event.extra if scheduled_event and scheduled_event.extra else None
+
         await self._run_repo.add_event(
             sequence_run_candidate_id=src.id,
             event_type=EventType.EMAIL_SENT,
@@ -390,6 +393,7 @@ class SequenceRunService:
             external_message_id=external_message_id,
             external_thread_id=thread_id,
             external_provider=IntegrationProvider.NYLAS,
+            extra=extra,
         )
 
         if step_order is not None:
@@ -509,6 +513,8 @@ class SequenceRunService:
                     "to_email": referrer_email,
                     "referred_candidate_email": referral_email,
                     "referred_candidate_name": referral_name,
+                    "subject": handoff_step["subject"],
+                    "body": handoff_step["body"],
                 },
             )
         except Exception as e:

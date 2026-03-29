@@ -17,6 +17,7 @@ export type EventType =
   | "reply_classified"
   | "reply_sent"
   | "referral_detected"
+  | "referral_handoff_sent"
   | "completed"
   | "unsubscribed";
 

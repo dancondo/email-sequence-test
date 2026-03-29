@@ -14,6 +14,7 @@ const EVENT_STYLES: Record<EventType, { bg: string; dot: string; label: string }
   reply_classified: { bg: "bg-indigo-50", dot: "bg-indigo-400", label: "Reply Classified" },
   reply_sent: { bg: "bg-teal-50", dot: "bg-teal-400", label: "Reply Email Sent" },
   referral_detected: { bg: "bg-amber-50", dot: "bg-amber-400", label: "Referral Detected" },
+  referral_handoff_sent: { bg: "bg-orange-50", dot: "bg-orange-400", label: "Referral Handoff Sent" },
   completed: { bg: "bg-green-50", dot: "bg-green-500", label: "Completed" },
   unsubscribed: { bg: "bg-red-50", dot: "bg-red-500", label: "Unsubscribed" },
 };
@@ -97,6 +98,24 @@ function EventMetadata({ event }: { event: SequenceRunCandidateEvent }) {
     );
   }
 
+  if (event.event_type === "email_scheduled" || event.event_type === "email_sent") {
+    const { subject, body } = meta as { subject?: string; body?: string };
+    return (
+      <div className="mt-2 space-y-1 text-xs">
+        {subject && (
+          <p className="text-gray-500">
+            <span className="font-medium text-gray-600">Subject:</span> {subject}
+          </p>
+        )}
+        {body && (
+          <div className="mt-1 rounded border border-gray-200 bg-white p-2 text-gray-600">
+            <div dangerouslySetInnerHTML={{ __html: body }} />
+          </div>
+        )}
+      </div>
+    );
+  }
+
   if (event.event_type === "reply_sent") {
     const { subject, body } = meta as { subject?: string; body?: string };
     return (
@@ -135,6 +154,44 @@ function EventMetadata({ event }: { event: SequenceRunCandidateEvent }) {
             Added to list:{" "}
             <span className="font-medium">{referral_list_name}</span>
           </p>
+        )}
+      </div>
+    );
+  }
+
+  if (event.event_type === "referral_handoff_sent") {
+    const { to_email, referred_candidate_email, referred_candidate_name, subject, body } =
+      meta as {
+        to_email?: string;
+        referred_candidate_email?: string;
+        referred_candidate_name?: string;
+        subject?: string;
+        body?: string;
+      };
+    return (
+      <div className="mt-2 space-y-1 text-xs">
+        {to_email && (
+          <p className="text-gray-500">
+            <span className="font-medium text-gray-600">To:</span> {to_email}
+          </p>
+        )}
+        {referred_candidate_email && (
+          <p className="text-gray-500">
+            <span className="font-medium text-gray-600">Referred:</span>{" "}
+            {referred_candidate_name
+              ? `${referred_candidate_name} (${referred_candidate_email})`
+              : referred_candidate_email}
+          </p>
+        )}
+        {subject && (
+          <p className="text-gray-500">
+            <span className="font-medium text-gray-600">Subject:</span> {subject}
+          </p>
+        )}
+        {body && (
+          <div className="mt-1 rounded border border-gray-200 bg-white p-2 text-gray-600">
+            <div dangerouslySetInnerHTML={{ __html: body }} />
+          </div>
         )}
       </div>
     );
