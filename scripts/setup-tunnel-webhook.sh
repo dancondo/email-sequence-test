@@ -32,13 +32,18 @@ echo "==> Tunnel URL: ${TUNNEL_URL}"
 echo "==> Webhook URL: ${WEBHOOK_URL}"
 echo ""
 
-# Wait until the tunnel URL is reachable
+# Wait until the tunnel URL is reachable (use Google DNS to avoid local resolver issues)
+TUNNEL_HOST=$(echo "$TUNNEL_URL" | sed 's|https://||')
+
 echo "Waiting for tunnel to be reachable..."
 for i in $(seq 1 30); do
-  STATUS=$(curl -s -o /dev/null -w '%{http_code}' "${TUNNEL_URL}/api/health" || true)
-  if [ "$STATUS" = "200" ]; then
-    echo "Tunnel is live!"
-    break
+  TUNNEL_IP=$(nslookup "$TUNNEL_HOST" 8.8.8.8 2>/dev/null | awk '/^Address:/ && !/#/ { print $2; exit }' || true)
+  if [ -n "$TUNNEL_IP" ]; then
+    STATUS=$(curl -s --resolve "${TUNNEL_HOST}:443:${TUNNEL_IP}" -o /dev/null -w '%{http_code}' "${TUNNEL_URL}/api/health" || true)
+    if [ "$STATUS" = "200" ]; then
+      echo "Tunnel is live!"
+      break
+    fi
   fi
   if [ "$i" = "30" ]; then
     echo "ERROR: Tunnel URL not reachable after 30s"
