@@ -91,7 +91,7 @@ class WebhookService:
             received_at=message.received_at,
         )
 
-        await self._classify_reply(src.id, message.body)
+        await self._classify_reply(src, message.body)
 
         await self._cancel_pending_followups(src.id, notification.grant_id)
 
@@ -108,13 +108,11 @@ class WebhookService:
             thread_id=message.thread_id,
         )
 
-    async def _classify_reply(
-        self, sequence_run_candidate_id: int, reply_body: str
-    ) -> None:
+    async def _classify_reply(self, src, reply_body: str) -> None:
         try:
             result = self._classification_service.classify_reply(reply_body)
             await self._run_service.add_classification_event(
-                sequence_run_candidate_id=sequence_run_candidate_id,
+                src=src,
                 intent=result.intent,
                 confidence=result.confidence,
                 reasoning=result.reasoning,
@@ -122,7 +120,7 @@ class WebhookService:
         except Exception:
             logger.warning(
                 "Failed to classify reply for candidate %s",
-                sequence_run_candidate_id,
+                src.id,
                 exc_info=True,
             )
 

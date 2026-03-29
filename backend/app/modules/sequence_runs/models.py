@@ -27,6 +27,8 @@ class SequenceRunCandidateStatus(str, enum.Enum):
     ACTIVE = "active"
     COMPLETED = "completed"
     REPLIED = "replied"
+    INTERESTED = "interested"
+    NOT_INTERESTED = "not_interested"
     UNSUBSCRIBED = "unsubscribed"
 
 

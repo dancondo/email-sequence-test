@@ -4,6 +4,7 @@ from datetime import datetime
 from fastapi import HTTPException
 
 from app.modules.candidates.service import CandidateService
+from app.modules.classification.schemas import ReplyIntent
 from app.modules.email_integration.models import IntegrationProvider
 from app.modules.email_integration.service import EmailIntegrationService
 from app.modules.sequence_runs.models import (
@@ -21,6 +22,11 @@ from app.modules.sequence_runs.schemas import (
     SequenceStartResponse,
 )
 from app.modules.sequences.service import SequenceService
+
+_INTENT_TO_STATUS = {
+    ReplyIntent.INTERESTED: SequenceRunCandidateStatus.INTERESTED,
+    ReplyIntent.NOT_INTERESTED: SequenceRunCandidateStatus.NOT_INTERESTED,
+}
 
 
 class SequenceRunService:
@@ -238,7 +244,12 @@ class SequenceRunService:
                 status_code=404, detail="Candidate not found in this run"
             )
 
-        if src.status != SequenceRunCandidateStatus.REPLIED:
+        reply_statuses = {
+            SequenceRunCandidateStatus.REPLIED,
+            SequenceRunCandidateStatus.INTERESTED,
+            SequenceRunCandidateStatus.NOT_INTERESTED,
+        }
+        if src.status not in reply_statuses:
             raise HTTPException(
                 status_code=409,
                 detail="Can only reply to candidates who have replied first",
@@ -365,13 +376,13 @@ class SequenceRunService:
 
     async def add_classification_event(
         self,
-        sequence_run_candidate_id: int,
+        src: SequenceRunCandidate,
         intent: str,
         confidence: float,
         reasoning: str,
     ) -> None:
         await self._run_repo.add_event(
-            sequence_run_candidate_id=sequence_run_candidate_id,
+            sequence_run_candidate_id=src.id,
             event_type=EventType.REPLY_CLASSIFIED,
             extra={
                 "intent": intent,
@@ -379,3 +390,7 @@ class SequenceRunService:
                 "reasoning": reasoning,
             },
         )
+
+        new_status = _INTENT_TO_STATUS.get(ReplyIntent(intent))
+        if new_status:
+            await self._run_repo.update_candidate_status(src, new_status)

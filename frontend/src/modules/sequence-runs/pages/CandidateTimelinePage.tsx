@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useCandidateTimeline, useSendReply } from "../hooks";
 import { PATHS } from "@/routes/paths";
-import { EventType } from "../types";
+import { EventType, SequenceRunCandidateEvent } from "../types";
 import { RichTextEditor } from "@/shared/components/RichTextEditor";
 
 const EVENT_STYLES: Record<EventType, { bg: string; dot: string; label: string }> = {
@@ -12,7 +12,7 @@ const EVENT_STYLES: Record<EventType, { bg: string; dot: string; label: string }
   email_failed: { bg: "bg-red-50", dot: "bg-red-400", label: "Email Failed" },
   reply_received: { bg: "bg-purple-50", dot: "bg-purple-400", label: "Reply Received" },
   reply_classified: { bg: "bg-indigo-50", dot: "bg-indigo-400", label: "Reply Classified" },
-  reply_sent: { bg: "bg-teal-50", dot: "bg-teal-400", label: "Reply Sent" },
+  reply_sent: { bg: "bg-teal-50", dot: "bg-teal-400", label: "Reply Email Sent" },
   completed: { bg: "bg-green-50", dot: "bg-green-500", label: "Completed" },
   unsubscribed: { bg: "bg-red-50", dot: "bg-red-500", label: "Unsubscribed" },
 };
@@ -21,8 +21,106 @@ const STATUS_STYLES: Record<string, string> = {
   active: "bg-blue-100 text-blue-700",
   completed: "bg-green-100 text-green-700",
   replied: "bg-purple-100 text-purple-700",
+  interested: "bg-green-100 text-green-700",
+  not_interested: "bg-red-100 text-red-700",
   unsubscribed: "bg-red-100 text-red-700",
 };
+
+const INTENT_STYLES: Record<string, string> = {
+  positive: "bg-green-100 text-green-700",
+  interested: "bg-green-100 text-green-700",
+  negative: "bg-red-100 text-red-700",
+  not_interested: "bg-red-100 text-red-700",
+  neutral: "bg-yellow-100 text-yellow-700",
+};
+
+function EventMetadata({ event }: { event: SequenceRunCandidateEvent }) {
+  const meta = event.metadata;
+  if (!meta || Object.keys(meta).length === 0) return null;
+
+  if (event.event_type === "reply_received") {
+    const { from_email, subject, body } = meta as {
+      from_email?: string;
+      subject?: string;
+      body?: string;
+    };
+    return (
+      <div className="mt-2 space-y-1 text-xs">
+        {from_email && (
+          <p className="text-gray-500">
+            <span className="font-medium text-gray-600">From:</span> {from_email}
+          </p>
+        )}
+        {subject && (
+          <p className="text-gray-500">
+            <span className="font-medium text-gray-600">Subject:</span> {subject}
+          </p>
+        )}
+        {body && (
+          <div className="mt-1 rounded border border-gray-200 bg-white p-2 text-gray-600">
+            <div dangerouslySetInnerHTML={{ __html: body }} />
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  if (event.event_type === "reply_classified") {
+    const { intent, confidence, reasoning } = meta as {
+      intent?: string;
+      confidence?: number;
+      reasoning?: string;
+    };
+    return (
+      <div className="mt-2 space-y-1 text-xs">
+        {intent && (
+          <p>
+            <span
+              className={`inline-block rounded-full px-2 py-0.5 text-xs font-medium ${
+                INTENT_STYLES[intent.toLowerCase()] ?? "bg-gray-100 text-gray-700"
+              }`}
+            >
+              {intent}
+            </span>
+            {confidence != null && (
+              <span className="ml-2 text-gray-400">
+                {Math.round(confidence * 100)}% confidence
+              </span>
+            )}
+          </p>
+        )}
+        {reasoning && (
+          <p className="text-gray-500 italic">{reasoning}</p>
+        )}
+      </div>
+    );
+  }
+
+  if (event.event_type === "reply_sent") {
+    const { subject, body } = meta as { subject?: string; body?: string };
+    return (
+      <div className="mt-2 space-y-1 text-xs">
+        {subject && (
+          <p className="text-gray-500">
+            <span className="font-medium text-gray-600">Subject:</span> {subject}
+          </p>
+        )}
+        {body && (
+          <div className="mt-1 rounded border border-gray-200 bg-white p-2 text-gray-600">
+            <div dangerouslySetInnerHTML={{ __html: body }} />
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  // Fallback: raw JSON for any other event types with metadata
+  return (
+    <pre className="mt-1 overflow-auto text-xs text-gray-500">
+      {JSON.stringify(meta, null, 2)}
+    </pre>
+  );
+}
 
 export function CandidateTimelinePage() {
   const { id, runId, candidateId } = useParams<{
@@ -153,12 +251,7 @@ export function CandidateTimelinePage() {
                         </p>
                       )}
 
-                      {event.metadata &&
-                        Object.keys(event.metadata).length > 0 && (
-                          <pre className="mt-1 overflow-auto text-xs text-gray-500">
-                            {JSON.stringify(event.metadata, null, 2)}
-                          </pre>
-                        )}
+                      <EventMetadata event={event} />
                     </div>
                   </div>
                 );
@@ -169,7 +262,7 @@ export function CandidateTimelinePage() {
       </div>
 
       {/* Reply Form */}
-      {src.status === "replied" && (
+      {(src.status === "replied" || src.status === "interested" || src.status === "not_interested") && (
         <div className="mt-6 rounded-lg border border-gray-200 bg-white p-4 shadow-sm">
           <h2 className="mb-4 text-lg font-semibold text-gray-800">
             Send Reply

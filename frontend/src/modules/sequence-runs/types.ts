@@ -5,6 +5,8 @@ export type SequenceRunCandidateStatus =
   | "active"
   | "completed"
   | "replied"
+  | "interested"
+  | "not_interested"
   | "unsubscribed";
 export type EventType =
   | "enrolled"
