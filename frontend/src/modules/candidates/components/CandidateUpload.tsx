@@ -1,6 +1,6 @@
 import { useRef, useState } from "react";
 import { useUploadCandidates } from "../hooks";
-import { useCandidateLists } from "@/modules/candidate-lists/hooks";
+import { useCandidateLists, useAssignCandidatesToList } from "@/modules/candidate-lists/hooks";
 import { CsvUploadResult } from "../types";
 
 interface CandidateUploadProps {
@@ -10,42 +10,70 @@ interface CandidateUploadProps {
 export function CandidateUpload({ onUploadComplete }: CandidateUploadProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const uploadMutation = useUploadCandidates();
+  const assignMutation = useAssignCandidatesToList();
   const { data: lists } = useCandidateLists();
 
   const [listInput, setListInput] = useState("");
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [uploadResult, setUploadResult] = useState<CsvUploadResult | null>(
     null
   );
   const [uploadError, setUploadError] = useState<string | null>(null);
 
-  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setSelectedFile(e.target.files?.[0] ?? null);
+    setUploadError(null);
+    setUploadResult(null);
+  };
+
+  const handleUpload = () => {
+    if (!selectedFile) return;
 
     setUploadError(null);
     setUploadResult(null);
 
-    const matchedList = lists?.find((l) => l.name === listInput.trim());
-    const listId = matchedList?.id;
-    const listName = !matchedList && listInput.trim() ? listInput.trim() : undefined;
+    uploadMutation.mutate(selectedFile, {
+      onSuccess: (result) => {
+        setUploadResult(result);
+        setSelectedFile(null);
+        if (fileInputRef.current) fileInputRef.current.value = "";
 
-    uploadMutation.mutate(
-      { file, listId, listName },
-      {
-        onSuccess: (result) => {
-          setUploadResult(result);
-          onUploadComplete(result);
-        },
-        onError: (err) => {
-          setUploadError(
-            err instanceof Error ? err.message : "Upload failed"
+        const trimmedInput = listInput.trim();
+        if (trimmedInput && result.candidates.length > 0) {
+          const matchedList = lists?.find((l) => l.name === trimmedInput);
+          const candidateIds = result.candidates.map((c) => c.id);
+
+          assignMutation.mutate(
+            {
+              listId: matchedList?.id,
+              listName: matchedList ? undefined : trimmedInput,
+              candidateIds,
+            },
+            {
+              onSuccess: () => onUploadComplete(result),
+              onError: (err) => {
+                setUploadError(
+                  `Upload succeeded but list assignment failed: ${
+                    err instanceof Error ? err.message : "Unknown error"
+                  }`
+                );
+                onUploadComplete(result);
+              },
+            }
           );
-        },
-      }
-    );
-
-    if (fileInputRef.current) fileInputRef.current.value = "";
+        } else {
+          onUploadComplete(result);
+        }
+      },
+      onError: (err) => {
+        setUploadError(
+          err instanceof Error ? err.message : "Upload failed"
+        );
+      },
+    });
   };
+
+  const isPending = uploadMutation.isPending || assignMutation.isPending;
 
   return (
     <div className="rounded-lg border border-gray-200 bg-white p-4 shadow-sm">
@@ -85,9 +113,13 @@ export function CandidateUpload({ onUploadComplete }: CandidateUploadProps) {
           onChange={handleFileChange}
           className="text-sm text-gray-500 file:mr-3 file:rounded file:border-0 file:bg-blue-50 file:px-3 file:py-1.5 file:text-sm file:font-medium file:text-blue-700 hover:file:bg-blue-100"
         />
-        {uploadMutation.isPending && (
-          <span className="text-sm text-gray-500">Uploading...</span>
-        )}
+        <button
+          onClick={handleUpload}
+          disabled={!selectedFile || isPending}
+          className="rounded bg-blue-600 px-4 py-1.5 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50"
+        >
+          {isPending ? "Uploading..." : "Upload"}
+        </button>
       </div>
 
       {uploadError && (

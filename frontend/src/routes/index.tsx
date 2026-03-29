@@ -6,6 +6,8 @@ import { SequenceDetailPage } from "@/modules/sequences/pages/SequenceDetailPage
 import { SequenceEditorPage } from "@/modules/sequences/pages/SequenceEditorPage";
 import { SequenceRunDetailPage } from "@/modules/sequence-runs/pages/SequenceRunDetailPage";
 import { CandidateTimelinePage } from "@/modules/sequence-runs/pages/CandidateTimelinePage";
+import { CandidateListPage } from "@/modules/candidates/pages/CandidateListPage";
+import { CandidateInfoPage } from "@/modules/candidates/pages/CandidateInfoPage";
 import { PATHS } from "./paths";
 
 function NavBar() {
@@ -13,6 +15,7 @@ function NavBar() {
 
   const links = [
     { to: PATHS.SEQUENCES, label: "Sequences" },
+    { to: PATHS.CANDIDATES, label: "Candidates" },
     { to: PATHS.SETTINGS, label: "Settings" },
   ];
 
@@ -45,6 +48,8 @@ export function AppRouter() {
       <Routes>
         <Route path={PATHS.HEALTH} element={<HealthPage />} />
         <Route path={PATHS.SETTINGS} element={<SettingsPage />} />
+        <Route path={PATHS.CANDIDATES} element={<CandidateListPage />} />
+        <Route path={PATHS.CANDIDATE_DETAIL} element={<CandidateInfoPage />} />
         <Route path={PATHS.SEQUENCES} element={<SequenceListPage />} />
         <Route path={PATHS.SEQUENCE_NEW} element={<SequenceEditorPage />} />
         <Route path={PATHS.SEQUENCE_DETAIL} element={<SequenceDetailPage />} />

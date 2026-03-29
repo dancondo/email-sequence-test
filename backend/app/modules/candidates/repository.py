@@ -1,7 +1,10 @@
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import selectinload
 
+from app.modules.candidate_lists.models import CandidateListCandidate
 from app.modules.candidates.models import Candidate
+from app.modules.sequence_runs.models import SequenceRun, SequenceRunCandidate
 
 
 class CandidateRepository:
@@ -51,3 +54,38 @@ class CandidateRepository:
             await self._db.refresh(candidate)
 
         return created, existing
+
+    async def list_all(
+        self, list_ids: list[int] | None = None
+    ) -> list[tuple[Candidate, int]]:
+        run_count = func.count(SequenceRunCandidate.id).label("run_count")
+        stmt = (
+            select(Candidate, run_count)
+            .outerjoin(
+                SequenceRunCandidate,
+                SequenceRunCandidate.candidate_id == Candidate.id,
+            )
+        )
+
+        if list_ids:
+            stmt = stmt.join(
+                CandidateListCandidate,
+                CandidateListCandidate.candidate_id == Candidate.id,
+            ).where(CandidateListCandidate.candidate_list_id.in_(list_ids))
+
+        stmt = stmt.group_by(Candidate.id).order_by(Candidate.created_at.desc())
+        result = await self._db.execute(stmt)
+        return list(result.tuples().all())
+
+    async def get_with_runs(self, candidate_id: int) -> Candidate | None:
+        stmt = (
+            select(Candidate)
+            .where(Candidate.id == candidate_id)
+            .options(
+                selectinload(Candidate.sequence_run_candidates)
+                .selectinload(SequenceRunCandidate.sequence_run)
+                .selectinload(SequenceRun.sequence)
+            )
+        )
+        result = await self._db.execute(stmt)
+        return result.scalar_one_or_none()

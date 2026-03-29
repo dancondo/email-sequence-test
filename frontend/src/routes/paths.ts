@@ -1,6 +1,8 @@
 export const PATHS = {
   HEALTH: "/health",
   SETTINGS: "/settings",
+  CANDIDATES: "/candidates",
+  CANDIDATE_DETAIL: "/candidates/:id",
   SEQUENCES: "/sequences",
   SEQUENCE_NEW: "/sequences/new",
   SEQUENCE_DETAIL: "/sequences/:id",

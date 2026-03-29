@@ -19,3 +19,36 @@ class CsvUploadResponse(BaseModel):
     candidates_existing: int
     candidates: list[CandidateResponse]
     errors: list[str]
+
+
+class CandidateWithRunCount(BaseModel):
+    id: int
+    email: str
+    name: str | None
+    run_count: int
+    created_at: datetime
+    updated_at: datetime
+
+    model_config = {"from_attributes": True}
+
+
+class CandidateRunSummary(BaseModel):
+    sequence_run_candidate_id: int
+    sequence_run_id: int
+    sequence_id: int
+    sequence_name: str
+    run_status: str
+    status: str
+    current_step_order: int
+    created_at: datetime
+
+
+class CandidateDetailResponse(BaseModel):
+    id: int
+    email: str
+    name: str | None
+    created_at: datetime
+    updated_at: datetime
+    runs: list[CandidateRunSummary]
+
+    model_config = {"from_attributes": True}

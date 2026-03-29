@@ -1,21 +1,36 @@
 import apiClient from "@/api/client";
-import { CsvUploadParams, CsvUploadResult } from "./types";
+import { CandidateDetail, CandidateWithRunCount, CsvUploadResult } from "./types";
 
-export async function uploadCandidates(
-  params: CsvUploadParams
-): Promise<CsvUploadResult> {
+export async function uploadCandidates(file: File): Promise<CsvUploadResult> {
   const formData = new FormData();
-  formData.append("file", params.file);
-  if (params.listId != null) {
-    formData.append("list_id", String(params.listId));
-  }
-  if (params.listName) {
-    formData.append("list_name", params.listName);
-  }
+  formData.append("file", file);
   const { data } = await apiClient.post<CsvUploadResult>(
     "/api/candidates/upload",
     formData,
     { headers: { "Content-Type": "multipart/form-data" } }
+  );
+  return data;
+}
+
+export async function fetchCandidates(
+  listIds?: number[]
+): Promise<CandidateWithRunCount[]> {
+  const params = new URLSearchParams();
+  if (listIds && listIds.length > 0) {
+    listIds.forEach((id) => params.append("list_ids", String(id)));
+  }
+  const query = params.toString();
+  const { data } = await apiClient.get<CandidateWithRunCount[]>(
+    `/api/candidates${query ? `?${query}` : ""}`
+  );
+  return data;
+}
+
+export async function fetchCandidate(
+  candidateId: number
+): Promise<CandidateDetail> {
+  const { data } = await apiClient.get<CandidateDetail>(
+    `/api/candidates/${candidateId}`
   );
   return data;
 }
