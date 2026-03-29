@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { Link, useNavigate, useParams } from "react-router-dom";
 import { RichTextEditor } from "@/shared/components/RichTextEditor";
 import { useSequence, useCreateSequence, useUpdateSequence } from "../hooks";
 import { SequenceStepInput } from "../types";
@@ -78,99 +78,171 @@ export function SequenceEditorPage() {
 
   if (isEdit && isLoading) {
     return (
-      <div className="mx-auto max-w-3xl p-6">
-        <p className="text-gray-500">Loading...</p>
+      <div className="mx-auto max-w-3xl px-6 py-10">
+        <p className="text-on-surface-variant">Loading...</p>
       </div>
     );
   }
 
   return (
-    <div className="mx-auto max-w-3xl p-6">
-      <div className="mb-6 flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-gray-800">
-          {isEdit ? "Edit Sequence" : "Create Sequence"}
-        </h1>
-        <button
-          onClick={() => navigate(PATHS.SEQUENCES)}
-          className="text-sm text-gray-500 hover:text-gray-700"
-        >
-          Cancel
-        </button>
+    <div className="mx-auto max-w-3xl px-6 py-10">
+      {/* Breadcrumb + Header */}
+      <div className="mb-8">
+        <div className="mb-2 flex items-center gap-2 text-xs font-medium uppercase tracking-wider text-on-surface-variant">
+          <Link to={PATHS.SEQUENCES} className="hover:text-on-surface">
+            Sequences
+          </Link>
+          <span>&gt;</span>
+          <span className="text-secondary">
+            {isEdit ? "Edit" : "New Editor"}
+          </span>
+        </div>
+        <div className="flex items-center justify-between">
+          <h1 className="font-editorial text-3xl text-on-surface">
+            {isEdit ? "Edit Sequence" : "Create Sequence"}
+          </h1>
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => navigate(PATHS.SEQUENCES)}
+              className="rounded-lg border border-outline-variant px-4 py-2 text-sm font-medium text-on-surface hover:bg-surface-container-low"
+            >
+              Cancel
+            </button>
+            <button
+              onClick={handleSave}
+              disabled={isSaving || !name.trim()}
+              className="rounded-lg bg-primary px-5 py-2 text-sm font-medium text-on-primary hover:bg-primary-container disabled:opacity-50"
+            >
+              {isSaving
+                ? "Saving..."
+                : isEdit
+                  ? "Update Sequence"
+                  : "Launch Sequence"}
+            </button>
+          </div>
+        </div>
       </div>
 
-      <div className="mb-6">
-        <label className="mb-1 block text-sm font-medium text-gray-700">
-          Sequence Name
+      {/* Sequence Foundations */}
+      <div className="mb-6 rounded-lg border border-outline-variant bg-surface-container-lowest p-5 shadow-ambient">
+        <div className="mb-4 flex items-center gap-3">
+          <div className="flex h-8 w-8 items-center justify-center rounded-full bg-secondary">
+            <svg
+              className="h-4 w-4 text-on-secondary"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+              strokeWidth={2}
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                d="M12 6v6m0 0v6m0-6h6m-6 0H6"
+              />
+            </svg>
+          </div>
+          <h2 className="text-lg font-semibold text-on-surface">
+            Sequence Foundations
+          </h2>
+        </div>
+        <label className="mb-1.5 block text-xs font-medium uppercase tracking-wider text-on-surface-variant">
+          Internal Name
         </label>
         <input
           type="text"
           value={name}
           onChange={(e) => setName(e.target.value)}
-          placeholder="e.g. Senior Engineer Outreach"
-          className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+          placeholder="e.g., Q4 Engineering Outreach - Mid Level"
+          className="w-full rounded-lg border border-outline-variant bg-surface px-3 py-2.5 text-sm text-on-surface placeholder:text-outline focus:border-secondary focus:outline-none focus:ring-1 focus:ring-secondary"
         />
       </div>
 
+      {/* Steps */}
       <div className="space-y-6">
         {steps.map((step, index) => (
           <div
             key={index}
-            className="rounded-lg border border-gray-200 bg-white p-4 shadow-sm"
+            className="rounded-lg border border-outline-variant bg-surface-container-lowest p-5 shadow-ambient"
           >
-            <div className="mb-3 flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <span className="rounded-full bg-blue-100 px-2.5 py-0.5 text-xs font-medium text-blue-700">
-                  Step {index + 1}
-                </span>
-                {index === 0 ? (
-                  <span className="text-xs text-gray-400">
-                    Sent on enrollment
-                  </span>
-                ) : (
-                  <div className="flex items-center gap-1 text-xs text-gray-500">
-                    <span>Send</span>
-                    <input
-                      type="number"
-                      min={1}
-                      value={step.delay_minutes}
-                      onChange={(e) =>
-                        updateStep(
-                          index,
-                          "delay_minutes",
-                          parseInt(e.target.value, 10) || 1
-                        )
-                      }
-                      className="w-14 rounded border border-gray-300 px-1.5 py-0.5 text-center text-xs focus:border-blue-500 focus:outline-none"
-                    />
-                    <span>min after previous (= days)</span>
-                  </div>
-                )}
+            {/* Step Header */}
+            <div className="mb-4 flex items-start justify-between">
+              <div className="flex items-start gap-3">
+                <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-primary text-xs font-bold text-on-primary">
+                  {index + 1}
+                </div>
+                <div>
+                  <h3 className="text-base font-semibold text-on-surface">
+                    {index === 0 ? "Initial Outreach" : `Follow-up ${index}`}
+                  </h3>
+                  {index === 0 ? (
+                    <p className="mt-0.5 text-xs text-on-surface-variant">
+                      Sends immediately after contact is added
+                    </p>
+                  ) : (
+                    <div className="mt-1 flex items-center gap-2">
+                      <span className="inline-flex items-center rounded-md border border-outline-variant px-2 py-0.5 text-xs font-semibold text-on-surface-variant">
+                        <input
+                          type="number"
+                          min={1}
+                          value={step.delay_minutes}
+                          onChange={(e) =>
+                            updateStep(
+                              index,
+                              "delay_minutes",
+                              parseInt(e.target.value, 10) || 1
+                            )
+                          }
+                          className="mr-1 w-10 rounded border border-outline-variant bg-transparent px-1 py-0 text-center text-xs text-on-surface-variant focus:outline-none"
+                        />
+                        {step.delay_minutes === 1 ? "min" : "mins"}
+                      </span>
+                      <span className="text-xs text-on-surface-variant">
+                        Threaded reply to Step {index}
+                      </span>
+                    </div>
+                  )}
+                </div>
               </div>
               {steps.length > 1 && (
                 <button
                   onClick={() => removeStep(index)}
-                  className="text-xs text-red-500 hover:text-red-700"
+                  className="rounded p-1 text-on-surface-variant hover:bg-surface-container hover:text-error"
+                  title="Remove step"
                 >
-                  Remove
+                  <svg
+                    className="h-4 w-4"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                    strokeWidth={2}
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                    />
+                  </svg>
                 </button>
               )}
             </div>
 
-            <div className="mb-3">
-              <label className="mb-1 block text-xs font-medium text-gray-600">
-                Subject
+            {/* Subject Line */}
+            <div className="mb-4">
+              <label className="mb-1.5 block text-xs font-medium uppercase tracking-wider text-on-surface-variant">
+                Subject Line
               </label>
               <input
                 type="text"
                 value={step.subject}
                 onChange={(e) => updateStep(index, "subject", e.target.value)}
                 placeholder="Email subject line"
-                className="w-full rounded border border-gray-300 px-3 py-1.5 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                className="w-full rounded-lg border border-outline-variant bg-surface px-3 py-2 text-sm text-on-surface placeholder:text-outline focus:border-secondary focus:outline-none focus:ring-1 focus:ring-secondary"
               />
             </div>
 
+            {/* Body */}
             <div>
-              <label className="mb-1 block text-xs font-medium text-gray-600">
+              <label className="mb-1.5 block text-xs font-medium uppercase tracking-wider text-on-surface-variant">
                 Body
               </label>
               <RichTextEditor
@@ -183,26 +255,30 @@ export function SequenceEditorPage() {
         ))}
       </div>
 
+      {/* Add Step */}
       <button
         onClick={addStep}
-        className="mt-4 w-full rounded-lg border-2 border-dashed border-gray-300 py-2 text-sm text-gray-500 hover:border-gray-400 hover:text-gray-600"
+        className="mt-6 flex w-full flex-col items-center gap-1 rounded-lg border-2 border-dashed border-outline-variant py-4 text-on-surface-variant hover:border-secondary hover:text-secondary"
       >
-        + Add Follow-up Step
+        <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary text-on-primary">
+          <svg
+            className="h-4 w-4"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+            strokeWidth={2.5}
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              d="M12 4.5v15m7.5-7.5h-15"
+            />
+          </svg>
+        </div>
+        <span className="text-xs font-medium uppercase tracking-wider">
+          Add Next Step
+        </span>
       </button>
-
-      <div className="mt-6 flex justify-end">
-        <button
-          onClick={handleSave}
-          disabled={isSaving || !name.trim()}
-          className="rounded bg-blue-600 px-6 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50"
-        >
-          {isSaving
-            ? "Saving..."
-            : isEdit
-              ? "Update Sequence"
-              : "Create Sequence"}
-        </button>
-      </div>
     </div>
   );
 }
