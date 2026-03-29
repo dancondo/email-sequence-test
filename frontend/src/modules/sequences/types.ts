@@ -23,6 +23,7 @@ export interface SequenceListItem {
   name: string;
   is_active: boolean;
   step_count: number;
+  run_count: number;
   created_at: string;
   updated_at: string;
 }

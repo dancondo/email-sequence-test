@@ -14,93 +14,123 @@ export function SequenceListPage() {
   };
 
   return (
-    <div className="mx-auto max-w-4xl p-6">
-      <div className="mb-6 flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-gray-800">Sequences</h1>
+    <div className="mx-auto max-w-4xl px-6 py-10">
+      <header className="mb-10">
+        <p className="text-xs font-semibold uppercase tracking-widest text-on-surface-variant">
+          Sequences
+        </p>
+      </header>
+
+      <div className="mb-8 flex items-end justify-between">
+        <div>
+          <h1 className="font-editorial text-4xl leading-tight text-on-surface">
+            Your sequences
+          </h1>
+          <p className="mt-2 text-sm text-on-surface-variant">
+            Manage your multi-step outreach campaigns and track engagement.
+          </p>
+        </div>
         <button
           onClick={() => navigate(PATHS.SEQUENCE_NEW)}
-          className="rounded bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
+          className="rounded bg-gradient-to-br from-primary to-primary-container px-5 py-2.5 text-sm font-medium text-on-primary hover:opacity-90"
         >
-          Create Sequence
+          Create New Sequence
         </button>
       </div>
 
-      {isLoading && <p className="text-gray-500">Loading...</p>}
+      {isLoading && <p className="text-on-surface-variant">Loading...</p>}
 
       {sequences && sequences.length === 0 && (
-        <div className="rounded-lg border-2 border-dashed border-gray-300 p-12 text-center">
-          <p className="text-gray-500">No sequences yet.</p>
-          <p className="mt-1 text-sm text-gray-400">
+        <div className="rounded bg-surface-container-low px-12 py-16 text-center">
+          <p className="font-editorial text-2xl text-on-surface-variant">
+            No sequences yet.
+          </p>
+          <p className="mt-2 text-sm text-outline">
             Create your first email sequence to get started.
           </p>
         </div>
       )}
 
       {sequences && sequences.length > 0 && (
-        <div className="overflow-hidden rounded-lg border border-gray-200 bg-white shadow-sm">
-          <table className="w-full">
-            <thead>
-              <tr className="border-b border-gray-200 bg-gray-50 text-left text-sm font-medium text-gray-500">
-                <th className="px-4 py-3">Name</th>
-                <th className="px-4 py-3">Steps</th>
-                <th className="px-4 py-3">Created</th>
-                <th className="px-4 py-3 text-right">Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {sequences.map((seq) => (
-                <tr
-                  key={seq.id}
-                  className="border-b border-gray-100 last:border-0"
-                >
-                  <td className="px-4 py-3 font-medium text-gray-800">
-                    {seq.name}
-                  </td>
-                  <td className="px-4 py-3 text-sm text-gray-500">
-                    {seq.step_count} step{seq.step_count !== 1 ? "s" : ""}
-                  </td>
-                  <td className="px-4 py-3 text-sm text-gray-500">
-                    {new Date(seq.created_at).toLocaleDateString()}
-                  </td>
-                  <td className="px-4 py-3 text-right">
-                    <button
-                      onClick={() =>
-                        navigate(
-                          PATHS.SEQUENCE_RUNS.replace(
-                            ":id",
-                            String(seq.id)
-                          )
-                        )
-                      }
-                      className="mr-2 text-sm font-medium text-green-600 hover:text-green-800"
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+          {sequences.map((seq) => (
+              <div
+                key={seq.id}
+                className="group rounded bg-surface-container-lowest p-5 shadow-ambient transition-shadow hover:shadow-ambient-lg"
+              >
+                <div className="mb-4 flex items-start justify-between">
+                  <div className="flex items-center gap-2">
+                    <span
+                      className={`inline-block rounded-full px-2.5 py-0.5 text-xs font-medium ${
+                        seq.is_active
+                          ? "bg-secondary-container text-on-secondary-container"
+                          : "bg-surface-container-high text-on-surface-variant"
+                      }`}
                     >
-                      Runs
-                    </button>
-                    <button
-                      onClick={() =>
-                        navigate(
-                          PATHS.SEQUENCE_EDIT.replace(
-                            ":id",
-                            String(seq.id)
-                          )
-                        )
-                      }
-                      className="mr-2 text-sm font-medium text-blue-600 hover:text-blue-800"
-                    >
-                      Edit
-                    </button>
-                    <button
-                      onClick={() => handleDelete(seq.id, seq.name)}
-                      disabled={deleteMutation.isPending}
-                      className="text-sm font-medium text-red-600 hover:text-red-800 disabled:opacity-50"
-                    >
-                      Delete
-                    </button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+                      {seq.is_active ? "Active" : "Draft"}
+                    </span>
+                  </div>
+                  <button
+                    onClick={() => handleDelete(seq.id, seq.name)}
+                    disabled={deleteMutation.isPending}
+                    className="text-xs text-outline opacity-0 transition-opacity hover:text-error group-hover:opacity-100 disabled:opacity-50"
+                  >
+                    Delete
+                  </button>
+                </div>
+
+                <h3 className="mb-3 text-base font-semibold text-on-surface">
+                  {seq.name}
+                </h3>
+
+                <div className="mb-4 grid grid-cols-3 gap-3">
+                  <div>
+                    <p className="text-xs text-outline">Steps</p>
+                    <p className="text-lg font-semibold text-on-surface">
+                      {seq.step_count}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-outline">Runs</p>
+                    <p className="text-lg font-semibold text-on-surface">
+                      {seq.run_count}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-outline">Created</p>
+                    <p className="text-sm font-medium text-on-surface">
+                      {new Date(seq.created_at).toLocaleDateString("en-US", {
+                        month: "short",
+                        day: "numeric",
+                      })}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-3">
+                  <button
+                    onClick={() =>
+                      navigate(
+                        PATHS.SEQUENCE_RUNS.replace(":id", String(seq.id))
+                      )
+                    }
+                    className="text-xs font-semibold uppercase tracking-wider text-secondary hover:text-secondary-container"
+                  >
+                    View Runs
+                  </button>
+                  <button
+                    onClick={() =>
+                      navigate(
+                        PATHS.SEQUENCE_EDIT.replace(":id", String(seq.id))
+                      )
+                    }
+                    className="text-xs font-semibold uppercase tracking-wider text-on-surface-variant hover:text-on-surface"
+                  >
+                    Edit
+                  </button>
+                </div>
+              </div>
+          ))}
         </div>
       )}
     </div>

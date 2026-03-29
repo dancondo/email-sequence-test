@@ -48,5 +48,6 @@ class SequenceListResponse(BaseModel):
     name: str
     is_active: bool
     step_count: int
+    run_count: int
     created_at: datetime
     updated_at: datetime

@@ -1,5 +1,6 @@
 from sqlalchemy import delete, select
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import selectinload
 
 from app.modules.sequences.models import Sequence, SequenceStep
 
@@ -9,7 +10,11 @@ class SequenceRepository:
         self._db = db
 
     async def list_all(self) -> list[Sequence]:
-        stmt = select(Sequence).order_by(Sequence.created_at.desc())
+        stmt = (
+            select(Sequence)
+            .options(selectinload(Sequence.runs))
+            .order_by(Sequence.created_at.desc())
+        )
         result = await self._db.execute(stmt)
         return list(result.scalars().all())
 

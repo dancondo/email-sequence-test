@@ -23,6 +23,7 @@ async def list_sequences(
             name=seq.name,
             is_active=seq.is_active,
             step_count=len(seq.steps),
+            run_count=len(seq.runs),
             created_at=seq.created_at,
             updated_at=seq.updated_at,
         )
