@@ -7,6 +7,7 @@ import {
   fetchRun,
   fetchRuns,
   removeCandidateFromRun,
+  sendReply,
   startRun,
 } from "./api";
 
@@ -84,6 +85,22 @@ export function useCandidates(sequenceId: number, runId: number) {
     queryKey: ["sequence-run-candidates", sequenceId, runId],
     queryFn: () => fetchCandidates(sequenceId, runId),
     enabled: !!sequenceId && !!runId,
+  });
+}
+
+export function useSendReply(
+  sequenceId: number,
+  runId: number,
+  candidateId: number
+) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (body: string) => sendReply(sequenceId, runId, candidateId, body),
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: ["candidate-timeline", sequenceId, runId, candidateId],
+      });
+    },
   });
 }
 

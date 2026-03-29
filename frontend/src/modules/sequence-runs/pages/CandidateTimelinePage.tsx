@@ -1,7 +1,9 @@
+import { useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { useCandidateTimeline } from "../hooks";
+import { useCandidateTimeline, useSendReply } from "../hooks";
 import { PATHS } from "@/routes/paths";
 import { EventType } from "../types";
+import { RichTextEditor } from "@/shared/components/RichTextEditor";
 
 const EVENT_STYLES: Record<EventType, { bg: string; dot: string; label: string }> = {
   enrolled: { bg: "bg-gray-50", dot: "bg-gray-400", label: "Enrolled" },
@@ -38,6 +40,9 @@ export function CandidateTimelinePage() {
     runIdNum,
     candidateIdNum
   );
+
+  const replyMutation = useSendReply(sequenceId, runIdNum, candidateIdNum);
+  const [replyBody, setReplyBody] = useState("");
 
   if (isLoading) {
     return (
@@ -162,6 +167,45 @@ export function CandidateTimelinePage() {
           </div>
         )}
       </div>
+
+      {/* Reply Form */}
+      {src.status === "replied" && (
+        <div className="mt-6 rounded-lg border border-gray-200 bg-white p-4 shadow-sm">
+          <h2 className="mb-4 text-lg font-semibold text-gray-800">
+            Send Reply
+          </h2>
+          <RichTextEditor
+            content={replyBody}
+            onChange={setReplyBody}
+            placeholder="Write your reply..."
+          />
+          <div className="mt-3 flex items-center gap-3">
+            <button
+              onClick={() =>
+                replyMutation.mutate(replyBody, {
+                  onSuccess: () => setReplyBody(""),
+                })
+              }
+              disabled={
+                !replyBody.trim() ||
+                replyBody === "<p></p>" ||
+                replyMutation.isPending
+              }
+              className="rounded bg-teal-600 px-4 py-2 text-sm font-medium text-white hover:bg-teal-700 disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              {replyMutation.isPending ? "Sending..." : "Send Reply"}
+            </button>
+            {replyMutation.isError && (
+              <span className="text-sm text-red-600">
+                Failed to send reply. Please try again.
+              </span>
+            )}
+            {replyMutation.isSuccess && (
+              <span className="text-sm text-green-600">Reply sent!</span>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

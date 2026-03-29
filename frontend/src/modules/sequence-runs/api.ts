@@ -2,6 +2,7 @@ import apiClient from "@/api/client";
 import {
   AddCandidatesResult,
   CandidateTimeline,
+  SendReplyResult,
   SequenceRun,
   SequenceRunCandidate,
   SequenceRunDetail,
@@ -73,6 +74,19 @@ export async function fetchCandidates(
 ): Promise<SequenceRunCandidate[]> {
   const { data } = await apiClient.get<SequenceRunCandidate[]>(
     `/api/sequences/${sequenceId}/runs/${runId}/candidates`
+  );
+  return data;
+}
+
+export async function sendReply(
+  sequenceId: number,
+  runId: number,
+  candidateId: number,
+  body: string
+): Promise<SendReplyResult> {
+  const { data } = await apiClient.post<SendReplyResult>(
+    `/api/sequences/${sequenceId}/runs/${runId}/candidates/${candidateId}/reply`,
+    { body }
   );
   return data;
 }

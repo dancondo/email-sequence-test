@@ -100,3 +100,8 @@ export interface CandidateTimeline {
   candidate: SequenceRunCandidate;
   events: SequenceRunCandidateEvent[];
 }
+
+export interface SendReplyResult {
+  message: string;
+  event: SequenceRunCandidateEvent;
+}
