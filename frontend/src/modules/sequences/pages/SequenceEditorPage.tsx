@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { RichTextEditor } from "@/shared/components/RichTextEditor";
 import { useSequence, useCreateSequence, useUpdateSequence } from "../hooks";
+import { createRun } from "@/modules/sequence-runs/api";
 import { SequenceStepInput } from "../types";
 import { PATHS } from "@/routes/paths";
 
@@ -63,15 +64,24 @@ export function SequenceEditorPage() {
   const handleSave = async () => {
     if (!name.trim()) return;
 
+    let seqId = sequenceId;
     if (isEdit) {
       await updateMutation.mutateAsync({
         id: sequenceId,
         data: { name, steps },
       });
     } else {
-      await createMutation.mutateAsync({ name, steps });
+      const created = await createMutation.mutateAsync({ name, steps });
+      seqId = created.id;
     }
-    navigate(PATHS.SEQUENCES);
+
+    const run = await createRun(seqId);
+    navigate(
+      PATHS.SEQUENCE_RUN_DETAIL.replace(":id", String(seqId)).replace(
+        ":runId",
+        String(run.id)
+      )
+    );
   };
 
   const isSaving = createMutation.isPending || updateMutation.isPending;

@@ -56,7 +56,12 @@ export function SequenceListPage() {
           {sequences.map((seq) => (
               <div
                 key={seq.id}
-                className="group rounded bg-surface-container-lowest p-5 shadow-ambient transition-shadow hover:shadow-ambient-lg"
+                onClick={() =>
+                  navigate(
+                    PATHS.SEQUENCE_DETAIL.replace(":id", String(seq.id))
+                  )
+                }
+                className="group cursor-pointer rounded bg-surface-container-lowest p-5 shadow-ambient transition-shadow hover:shadow-ambient-lg"
               >
                 <div className="mb-4 flex items-start justify-between">
                   <div className="flex items-center gap-2">
@@ -71,7 +76,10 @@ export function SequenceListPage() {
                     </span>
                   </div>
                   <button
-                    onClick={() => handleDelete(seq.id, seq.name)}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleDelete(seq.id, seq.name);
+                    }}
                     disabled={deleteMutation.isPending}
                     className="text-xs text-outline opacity-0 transition-opacity hover:text-error group-hover:opacity-100 disabled:opacity-50"
                   >
@@ -107,28 +115,6 @@ export function SequenceListPage() {
                   </div>
                 </div>
 
-                <div className="flex items-center gap-3">
-                  <button
-                    onClick={() =>
-                      navigate(
-                        PATHS.SEQUENCE_DETAIL.replace(":id", String(seq.id))
-                      )
-                    }
-                    className="text-xs font-semibold uppercase tracking-wider text-secondary hover:text-secondary-container"
-                  >
-                    View Runs
-                  </button>
-                  <button
-                    onClick={() =>
-                      navigate(
-                        PATHS.SEQUENCE_EDIT.replace(":id", String(seq.id))
-                      )
-                    }
-                    className="text-xs font-semibold uppercase tracking-wider text-on-surface-variant hover:text-on-surface"
-                  >
-                    Edit
-                  </button>
-                </div>
               </div>
           ))}
         </div>
