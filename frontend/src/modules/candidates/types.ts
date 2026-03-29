@@ -13,3 +13,9 @@ export interface CsvUploadResult {
   candidates: Candidate[];
   errors: string[];
 }
+
+export interface CsvUploadParams {
+  file: File;
+  listId?: number;
+  listName?: string;
+}

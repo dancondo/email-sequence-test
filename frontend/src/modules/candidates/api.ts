@@ -1,9 +1,17 @@
 import apiClient from "@/api/client";
-import { CsvUploadResult } from "./types";
+import { CsvUploadParams, CsvUploadResult } from "./types";
 
-export async function uploadCandidates(file: File): Promise<CsvUploadResult> {
+export async function uploadCandidates(
+  params: CsvUploadParams
+): Promise<CsvUploadResult> {
   const formData = new FormData();
-  formData.append("file", file);
+  formData.append("file", params.file);
+  if (params.listId != null) {
+    formData.append("list_id", String(params.listId));
+  }
+  if (params.listName) {
+    formData.append("list_name", params.listName);
+  }
   const { data } = await apiClient.post<CsvUploadResult>(
     "/api/candidates/upload",
     formData,

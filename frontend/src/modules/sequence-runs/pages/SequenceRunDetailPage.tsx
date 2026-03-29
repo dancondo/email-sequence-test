@@ -1,9 +1,8 @@
-import { useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useRun, useStartRun, useAddCandidates, useRemoveCandidate } from "../hooks";
-import { useUploadCandidates } from "@/modules/candidates/hooks";
 import { useSequence } from "@/modules/sequences/hooks";
 import { CsvUploadResult } from "@/modules/candidates/types";
+import { CandidateUpload } from "@/modules/candidates/components/CandidateUpload";
 import { SnapshotStep } from "../types";
 import { PATHS } from "@/routes/paths";
 
@@ -24,15 +23,8 @@ export function SequenceRunDetailPage() {
   const { data: run, isLoading, refetch } = useRun(sequenceId, runIdNum);
   const { data: sequence } = useSequence(sequenceId);
   const startMutation = useStartRun(sequenceId, runIdNum);
-  const uploadMutation = useUploadCandidates();
   const addCandidatesMutation = useAddCandidates(sequenceId, runIdNum);
   const removeCandidateMutation = useRemoveCandidate(sequenceId, runIdNum);
-
-  const fileInputRef = useRef<HTMLInputElement>(null);
-  const [uploadResult, setUploadResult] = useState<CsvUploadResult | null>(
-    null
-  );
-  const [uploadError, setUploadError] = useState<string | null>(null);
 
   const isDraft = run?.status === "draft";
 
@@ -52,31 +44,13 @@ export function SequenceRunDetailPage() {
           }
         : null;
 
-  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    setUploadError(null);
-    setUploadResult(null);
-
-    uploadMutation.mutate(file, {
-      onSuccess: (result) => {
-        setUploadResult(result);
-        const candidateIds = result.candidates.map((c) => c.id);
-        if (candidateIds.length > 0) {
-          addCandidatesMutation.mutate(candidateIds, {
-            onSuccess: () => refetch(),
-          });
-        }
-      },
-      onError: (err) => {
-        setUploadError(
-          err instanceof Error ? err.message : "Upload failed"
-        );
-      },
-    });
-
-    if (fileInputRef.current) fileInputRef.current.value = "";
+  const handleUploadComplete = (result: CsvUploadResult) => {
+    const candidateIds = result.candidates.map((c) => c.id);
+    if (candidateIds.length > 0) {
+      addCandidatesMutation.mutate(candidateIds, {
+        onSuccess: () => refetch(),
+      });
+    }
   };
 
   const handleStart = () => {
@@ -121,11 +95,11 @@ export function SequenceRunDetailPage() {
       <div className="mb-6">
         <button
           onClick={() =>
-            navigate(PATHS.SEQUENCE_RUNS.replace(":id", String(sequenceId)))
+            navigate(PATHS.SEQUENCE_DETAIL.replace(":id", String(sequenceId)))
           }
-          className="mb-1 text-sm text-gray-500 hover:text-gray-700"
+          className="mb-1 text-sm text-on-surface-variant hover:text-on-surface"
         >
-          &larr; Back to Runs
+          &larr; Back to Sequence
         </button>
         <div className="flex items-center justify-between">
           <div>
@@ -182,47 +156,8 @@ export function SequenceRunDetailPage() {
 
       {/* CSV Upload (only in DRAFT) */}
       {isDraft && (
-        <div className="mb-6 rounded-lg border border-gray-200 bg-white p-4 shadow-sm">
-          <h2 className="mb-3 text-lg font-semibold text-gray-800">
-            Upload Candidates
-          </h2>
-          <div className="flex items-center gap-3">
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept=".csv"
-              onChange={handleFileChange}
-              className="text-sm text-gray-500 file:mr-3 file:rounded file:border-0 file:bg-blue-50 file:px-3 file:py-1.5 file:text-sm file:font-medium file:text-blue-700 hover:file:bg-blue-100"
-            />
-            {uploadMutation.isPending && (
-              <span className="text-sm text-gray-500">Uploading...</span>
-            )}
-          </div>
-
-          {uploadError && (
-            <p className="mt-2 text-sm text-red-600">{uploadError}</p>
-          )}
-
-          {uploadResult && (
-            <div className="mt-3 rounded border border-green-200 bg-green-50 px-3 py-2 text-sm text-green-700">
-              <p>
-                Processed {uploadResult.total_rows} rows:{" "}
-                {uploadResult.candidates_created} new,{" "}
-                {uploadResult.candidates_existing} existing
-              </p>
-              {uploadResult.errors.length > 0 && (
-                <ul className="mt-1 list-inside list-disc text-amber-600">
-                  {uploadResult.errors.map((err, i) => (
-                    <li key={i}>{err}</li>
-                  ))}
-                </ul>
-              )}
-            </div>
-          )}
-
-          <p className="mt-2 text-xs text-gray-400">
-            CSV must have an "email" column. Optional: "name" column.
-          </p>
+        <div className="mb-6">
+          <CandidateUpload onUploadComplete={handleUploadComplete} />
         </div>
       )}
 

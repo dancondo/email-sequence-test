@@ -1,6 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
+from app.modules.candidate_lists.router import router as candidate_lists_router
 from app.modules.candidates.router import router as candidates_router
 from app.modules.email_integration.router import router as email_integration_router
 from app.modules.health.router import router as health_router
@@ -22,5 +23,6 @@ app.include_router(health_router)
 app.include_router(email_integration_router)
 app.include_router(sequences_router)
 app.include_router(candidates_router)
+app.include_router(candidate_lists_router)
 app.include_router(sequence_runs_router)
 app.include_router(webhooks_router)
