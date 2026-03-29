@@ -107,3 +107,11 @@ export interface SendReplyResult {
   message: string;
   event: SequenceRunCandidateEvent;
 }
+
+export interface Metrics {
+  total_sent: number;
+  total_replies: number;
+  reply_rate: number;
+  total_interested: number;
+  interest_rate: number;
+}

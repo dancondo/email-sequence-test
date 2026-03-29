@@ -94,3 +94,11 @@ class SendReplyRequest(BaseModel):
 class SendReplyResponse(BaseModel):
     message: str
     event: SequenceRunCandidateEventResponse
+
+
+class MetricsResponse(BaseModel):
+    total_sent: int
+    total_replies: int
+    reply_rate: float
+    total_interested: int
+    interest_rate: float

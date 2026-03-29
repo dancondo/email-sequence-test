@@ -1,6 +1,6 @@
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { useSequence } from "../hooks";
-import { useRuns, useCreateRun } from "@/modules/sequence-runs/hooks";
+import { useRuns, useCreateRun, useAllSequenceRunMetrics } from "@/modules/sequence-runs/hooks";
 import { PATHS } from "@/routes/paths";
 import { SequenceRunListItem, SequenceRunStatus } from "@/modules/sequence-runs/types";
 
@@ -24,6 +24,7 @@ export function SequenceDetailPage() {
   const { data: sequence, isLoading: seqLoading } = useSequence(sequenceId);
   const { data: runs, isLoading: runsLoading } = useRuns(sequenceId);
   const createMutation = useCreateRun(sequenceId);
+  const { data: metrics } = useAllSequenceRunMetrics(sequenceId);
 
   const isLoading = seqLoading || runsLoading;
 
@@ -133,34 +134,46 @@ export function SequenceDetailPage() {
           </div>
         </div>
 
-        {/* Global Metrics (mocked) */}
+        {/* Global Metrics */}
         <div>
           <h2 className="mb-4 text-xs font-medium uppercase tracking-wider text-on-surface-variant">
             Global Metrics
           </h2>
           <div className="grid grid-cols-2 gap-3">
             <div className="rounded-lg border border-outline-variant bg-surface-container-lowest p-4 shadow-ambient">
-              <span className="text-2xl font-bold text-on-surface">1,204</span>
+              <span className="text-2xl font-bold text-on-surface">
+                {metrics?.total_sent.toLocaleString() ?? "—"}
+              </span>
               <p className="mt-0.5 text-xs uppercase tracking-wider text-on-surface-variant">
-                Total Enrolled
+                Total Sent
               </p>
             </div>
             <div className="rounded-lg border border-outline-variant bg-surface-container-lowest p-4 shadow-ambient">
-              <span className="text-2xl font-bold text-on-surface">42%</span>
+              <span className="text-2xl font-bold text-on-surface">
+                {metrics?.total_replies.toLocaleString() ?? "—"}
+              </span>
               <p className="mt-0.5 text-xs uppercase tracking-wider text-on-surface-variant">
-                Acceptance
+                Total Replies
               </p>
             </div>
             <div className="rounded-lg border border-outline-variant bg-surface-container-lowest p-4 shadow-ambient">
-              <span className="text-2xl font-bold text-on-surface">89</span>
+              <span className="text-2xl font-bold text-on-surface">
+                {metrics
+                  ? `${(metrics.reply_rate * 100).toFixed(1)}%`
+                  : "—"}
+              </span>
               <p className="mt-0.5 text-xs uppercase tracking-wider text-on-surface-variant">
-                Messages
+                Reply Rate
               </p>
             </div>
             <div className="rounded-lg border border-outline-variant bg-surface-container-lowest p-4 shadow-ambient">
-              <span className="text-2xl font-bold text-on-surface">14d</span>
+              <span className="text-2xl font-bold text-on-surface">
+                {metrics
+                  ? `${(metrics.interest_rate * 100).toFixed(1)}%`
+                  : "—"}
+              </span>
               <p className="mt-0.5 text-xs uppercase tracking-wider text-on-surface-variant">
-                Average
+                Interest Rate
               </p>
             </div>
           </div>

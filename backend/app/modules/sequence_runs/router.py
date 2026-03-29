@@ -5,6 +5,7 @@ from app.modules.sequence_runs.schemas import (
     AddCandidatesRequest,
     AddCandidatesResponse,
     CandidateTimelineResponse,
+    MetricsResponse,
     SendReplyRequest,
     SendReplyResponse,
     SequenceRunCandidateEventResponse,
@@ -57,6 +58,23 @@ async def list_runs(
     ]
 
 
+@router.get("/metrics", response_model=MetricsResponse)
+async def get_all_sequence_run_metrics(
+    sequence_id: int,
+    service: SequenceRunService = Depends(get_sequence_run_service),
+):
+    return await service.get_all_sequence_run_metrics(sequence_id)
+
+
+@router.get("/{run_id}/metrics", response_model=MetricsResponse)
+async def get_run_metrics(
+    sequence_id: int,
+    run_id: int,
+    service: SequenceRunService = Depends(get_sequence_run_service),
+):
+    return await service.get_run_metrics(sequence_id, run_id)
+
+
 @router.get("/{run_id}", response_model=SequenceRunDetailResponse)
 async def get_run(
     sequence_id: int,
@@ -64,6 +82,15 @@ async def get_run(
     service: SequenceRunService = Depends(get_sequence_run_service),
 ):
     return await service.get_run(sequence_id, run_id)
+
+
+@router.delete("/{run_id}", status_code=204)
+async def delete_run(
+    sequence_id: int,
+    run_id: int,
+    service: SequenceRunService = Depends(get_sequence_run_service),
+):
+    await service.delete_run(sequence_id, run_id)
 
 
 @router.post("/{run_id}/start", response_model=SequenceStartResponse)

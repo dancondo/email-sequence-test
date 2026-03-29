@@ -2,9 +2,12 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   addCandidatesToRun,
   createRun,
+  deleteRun,
+  fetchAllSequenceRunMetrics,
   fetchCandidates,
   fetchCandidateTimeline,
   fetchRun,
+  fetchRunMetrics,
   fetchRuns,
   removeCandidateFromRun,
   sendReply,
@@ -31,6 +34,18 @@ export function useCreateRun(sequenceId: number) {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: () => createRun(sequenceId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: ["sequence-runs", sequenceId],
+      });
+    },
+  });
+}
+
+export function useDeleteRun(sequenceId: number, runId: number) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: () => deleteRun(sequenceId, runId),
     onSuccess: () => {
       queryClient.invalidateQueries({
         queryKey: ["sequence-runs", sequenceId],
@@ -77,6 +92,22 @@ export function useRemoveCandidate(sequenceId: number, runId: number) {
         queryKey: ["sequence-runs", sequenceId, runId],
       });
     },
+  });
+}
+
+export function useRunMetrics(sequenceId: number, runId: number) {
+  return useQuery({
+    queryKey: ["run-metrics", sequenceId, runId],
+    queryFn: () => fetchRunMetrics(sequenceId, runId),
+    enabled: !!sequenceId && !!runId,
+  });
+}
+
+export function useAllSequenceRunMetrics(sequenceId: number) {
+  return useQuery({
+    queryKey: ["sequence-run-metrics", sequenceId],
+    queryFn: () => fetchAllSequenceRunMetrics(sequenceId),
+    enabled: !!sequenceId,
   });
 }
 

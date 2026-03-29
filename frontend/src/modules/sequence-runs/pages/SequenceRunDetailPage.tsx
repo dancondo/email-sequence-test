@@ -1,5 +1,5 @@
 import { Link, useNavigate, useParams } from "react-router-dom";
-import { useRun } from "../hooks";
+import { useRun, useRunMetrics } from "../hooks";
 import { useSequence } from "@/modules/sequences/hooks";
 import { SequenceRunCandidateStatus } from "../types";
 import { DraftSequenceRunDetailPage } from "./DraftSequenceRunDetailPage";
@@ -43,6 +43,7 @@ export function SequenceRunDetailPage() {
 
   const { data: run, isLoading, refetch } = useRun(sequenceId, runIdNum);
   const { data: sequence } = useSequence(sequenceId);
+  const { data: metrics } = useRunMetrics(sequenceId, runIdNum);
 
   if (isLoading) {
     return (
@@ -118,7 +119,7 @@ export function SequenceRunDetailPage() {
         </div>
       </div>
 
-      {/* Metrics Cards (mocked) */}
+      {/* Performance Overview */}
       <div className="mb-10">
         <h2 className="mb-4 text-xs font-medium uppercase tracking-wider text-on-surface-variant">
           Performance Overview
@@ -128,36 +129,41 @@ export function SequenceRunDetailPage() {
             <p className="text-xs uppercase tracking-wider text-on-surface-variant">
               Total Sent
             </p>
-            <div className="mt-2 flex items-baseline gap-2">
-              <span className="text-3xl font-bold text-on-surface">1,482</span>
-              <span className="rounded-full bg-secondary/10 px-2 py-0.5 text-xs font-semibold text-secondary">
-                +12%
+            <div className="mt-2">
+              <span className="text-3xl font-bold text-on-surface">
+                {metrics?.total_sent.toLocaleString() ?? "—"}
               </span>
             </div>
-            <p className="mt-1 text-xs text-outline">vs. previous run</p>
           </div>
 
           <div className="rounded-lg border border-outline-variant bg-surface-container-lowest p-5 shadow-ambient">
             <p className="text-xs uppercase tracking-wider text-on-surface-variant">
               Replies
             </p>
-            <div className="mt-2 flex items-baseline gap-2">
-              <span className="text-3xl font-bold text-on-surface">342</span>
+            <div className="mt-2">
+              <span className="text-3xl font-bold text-on-surface">
+                {metrics?.total_replies.toLocaleString() ?? "—"}
+              </span>
             </div>
-            <p className="mt-1 text-xs text-outline">23.1% rate</p>
+            <p className="mt-1 text-xs text-outline">
+              {metrics ? `${(metrics.reply_rate * 100).toFixed(1)}% rate` : ""}
+            </p>
           </div>
 
           <div className="rounded-lg border border-outline-variant bg-surface-container-lowest p-5 shadow-ambient">
             <p className="text-xs uppercase tracking-wider text-on-surface-variant">
               Interest %
             </p>
-            <div className="mt-2 flex items-baseline gap-2">
-              <span className="text-3xl font-bold text-on-surface">8.4%</span>
-              <span className="rounded-full bg-secondary/10 px-2 py-0.5 text-xs font-semibold text-secondary">
-                +2.1%
+            <div className="mt-2">
+              <span className="text-3xl font-bold text-on-surface">
+                {metrics
+                  ? `${(metrics.interest_rate * 100).toFixed(1)}%`
+                  : "—"}
               </span>
             </div>
-            <p className="mt-1 text-xs text-outline">above benchmark</p>
+            <p className="mt-1 text-xs text-outline">
+              {metrics ? `${metrics.total_interested} interested` : ""}
+            </p>
           </div>
         </div>
       </div>

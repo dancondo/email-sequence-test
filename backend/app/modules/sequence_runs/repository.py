@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from sqlalchemy import select
+from sqlalchemy import func, literal, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
@@ -70,6 +70,10 @@ class SequenceRunRepository:
         await self._db.commit()
         await self._db.refresh(run)
         return run
+
+    async def delete(self, run: SequenceRun) -> None:
+        await self._db.delete(run)
+        await self._db.commit()
 
     # --- Candidate operations ---
 
@@ -258,7 +262,7 @@ class SequenceRunRepository:
             .where(
                 SequenceRunCandidateEvent.sequence_run_candidate_id
                 == sequence_run_candidate_id,
-                SequenceRunCandidateEvent.event_type == EventType.REPLY_RECEIVED,
+                SequenceRunCandidateEvent.event_type == EventType.REPLY_RECEIVED.value,
             )
             .order_by(SequenceRunCandidateEvent.occurred_at.desc())
             .limit(1)
@@ -279,3 +283,82 @@ class SequenceRunRepository:
         )
         result = await self._db.execute(stmt)
         return list(result.scalars().all())
+
+    def _build_metrics(self, total_sent: int, total_replies: int, total_interested: int) -> dict:
+        return {
+            "total_sent": total_sent,
+            "total_replies": total_replies,
+            "reply_rate": total_replies / total_sent if total_sent > 0 else 0.0,
+            "total_interested": total_interested,
+            "interest_rate": total_interested / total_sent if total_sent > 0 else 0.0,
+        }
+
+    async def _count_events_for_run(
+        self, run_id: int, event_type: EventType
+    ) -> int:
+        stmt = (
+            select(func.count())
+            .select_from(SequenceRunCandidateEvent)
+            .join(SequenceRunCandidate)
+            .where(
+                SequenceRunCandidate.sequence_run_id == run_id,
+                SequenceRunCandidateEvent.event_type == literal(event_type.name).cast(
+                    SequenceRunCandidateEvent.event_type.type
+                ),
+            )
+        )
+        return (await self._db.execute(stmt)).scalar() or 0
+
+    async def _count_events_for_sequence(
+        self, sequence_id: int, event_type: EventType
+    ) -> int:
+        stmt = (
+            select(func.count())
+            .select_from(SequenceRunCandidateEvent)
+            .join(SequenceRunCandidate)
+            .join(SequenceRun)
+            .where(
+                SequenceRun.sequence_id == sequence_id,
+                SequenceRunCandidateEvent.event_type == literal(event_type.name).cast(
+                    SequenceRunCandidateEvent.event_type.type
+                ),
+            )
+        )
+        return (await self._db.execute(stmt)).scalar() or 0
+
+    async def get_run_metrics(self, run_id: int) -> dict:
+        total_sent = await self._count_events_for_run(run_id, EventType.EMAIL_SENT)
+        total_replies = await self._count_events_for_run(run_id, EventType.REPLY_RECEIVED)
+
+        interested_stmt = (
+            select(func.count())
+            .select_from(SequenceRunCandidate)
+            .where(
+                SequenceRunCandidate.sequence_run_id == run_id,
+                SequenceRunCandidate.status == literal(
+                    SequenceRunCandidateStatus.INTERESTED.name
+                ).cast(SequenceRunCandidate.status.type),
+            )
+        )
+        total_interested = (await self._db.execute(interested_stmt)).scalar() or 0
+
+        return self._build_metrics(total_sent, total_replies, total_interested)
+
+    async def get_all_sequence_run_metrics(self, sequence_id: int) -> dict:
+        total_sent = await self._count_events_for_sequence(sequence_id, EventType.EMAIL_SENT)
+        total_replies = await self._count_events_for_sequence(sequence_id, EventType.REPLY_RECEIVED)
+
+        interested_stmt = (
+            select(func.count())
+            .select_from(SequenceRunCandidate)
+            .join(SequenceRun)
+            .where(
+                SequenceRun.sequence_id == sequence_id,
+                SequenceRunCandidate.status == literal(
+                    SequenceRunCandidateStatus.INTERESTED.name
+                ).cast(SequenceRunCandidate.status.type),
+            )
+        )
+        total_interested = (await self._db.execute(interested_stmt)).scalar() or 0
+
+        return self._build_metrics(total_sent, total_replies, total_interested)

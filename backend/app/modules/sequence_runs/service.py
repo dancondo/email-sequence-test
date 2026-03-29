@@ -56,6 +56,17 @@ class SequenceRunService:
             raise HTTPException(status_code=404, detail="Sequence run not found")
         return run
 
+    async def delete_run(self, sequence_id: int, run_id: int) -> None:
+        run = await self.get_run(sequence_id, run_id)
+
+        if run.status != SequenceRunStatus.DRAFT:
+            raise HTTPException(
+                status_code=409,
+                detail="Only draft runs can be deleted",
+            )
+
+        await self._run_repo.delete(run)
+
     async def add_candidates(
         self, sequence_id: int, run_id: int, candidate_ids: list[int]
     ) -> AddCandidatesResponse:
@@ -299,6 +310,16 @@ class SequenceRunService:
         )
 
         return event
+
+    # --- Metrics ---
+
+    async def get_run_metrics(self, sequence_id: int, run_id: int) -> dict:
+        await self.get_run(sequence_id, run_id)
+        return await self._run_repo.get_run_metrics(run_id)
+
+    async def get_all_sequence_run_metrics(self, sequence_id: int) -> dict:
+        await self._sequence_service.get_sequence(sequence_id)
+        return await self._run_repo.get_all_sequence_run_metrics(sequence_id)
 
     # --- Webhook-facing methods ---
 

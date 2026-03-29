@@ -2,6 +2,7 @@ import apiClient from "@/api/client";
 import {
   AddCandidatesResult,
   CandidateTimeline,
+  Metrics,
   SendReplyResult,
   SequenceRun,
   SequenceRunCandidate,
@@ -34,6 +35,13 @@ export async function fetchRun(
     `/api/sequences/${sequenceId}/runs/${runId}`
   );
   return data;
+}
+
+export async function deleteRun(
+  sequenceId: number,
+  runId: number
+): Promise<void> {
+  await apiClient.delete(`/api/sequences/${sequenceId}/runs/${runId}`);
 }
 
 export async function startRun(
@@ -87,6 +95,25 @@ export async function sendReply(
   const { data } = await apiClient.post<SendReplyResult>(
     `/api/sequences/${sequenceId}/runs/${runId}/candidates/${candidateId}/reply`,
     { body }
+  );
+  return data;
+}
+
+export async function fetchRunMetrics(
+  sequenceId: number,
+  runId: number
+): Promise<Metrics> {
+  const { data } = await apiClient.get<Metrics>(
+    `/api/sequences/${sequenceId}/runs/${runId}/metrics`
+  );
+  return data;
+}
+
+export async function fetchAllSequenceRunMetrics(
+  sequenceId: number
+): Promise<Metrics> {
+  const { data } = await apiClient.get<Metrics>(
+    `/api/sequences/${sequenceId}/runs/metrics`
   );
   return data;
 }

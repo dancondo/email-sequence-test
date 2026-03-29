@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { useStartRun, useAddCandidates, useRemoveCandidate } from "../hooks";
+import { useStartRun, useDeleteRun, useAddCandidates, useRemoveCandidate } from "../hooks";
 import { SequenceRunDetail } from "../types";
 import { CsvUploadResult } from "@/modules/candidates/types";
 import { Sequence } from "@/modules/sequences/types";
@@ -29,6 +29,7 @@ export function DraftSequenceRunDetailPage({
   );
 
   const startMutation = useStartRun(sequenceId, runId);
+  const deleteMutation = useDeleteRun(sequenceId, runId);
   const addCandidatesMutation = useAddCandidates(sequenceId, runId);
   const removeCandidateMutation = useRemoveCandidate(sequenceId, runId);
 
@@ -67,6 +68,21 @@ export function DraftSequenceRunDetailPage({
       )
     ) {
       startMutation.mutate(undefined, { onSuccess: () => refetch() });
+    }
+  };
+
+  const handleDiscard = () => {
+    if (
+      window.confirm(
+        "Delete this draft run? This action cannot be undone."
+      )
+    ) {
+      deleteMutation.mutate(undefined, {
+        onSuccess: () =>
+          navigate(
+            PATHS.SEQUENCE_DETAIL.replace(":id", String(sequenceId))
+          ),
+      });
     }
   };
 
@@ -330,14 +346,21 @@ export function DraftSequenceRunDetailPage({
         </p>
         <div className="flex items-center gap-4">
           <button
+            onClick={handleDiscard}
+            disabled={deleteMutation.isPending}
+            className="text-sm font-medium text-error hover:text-error/80 disabled:opacity-50"
+          >
+            {deleteMutation.isPending ? "Deleting..." : "Discard Run"}
+          </button>
+          <button
             onClick={() =>
               navigate(
                 PATHS.SEQUENCE_DETAIL.replace(":id", String(sequenceId))
               )
             }
-            className="text-sm font-medium text-on-surface-variant hover:text-on-surface"
+            className="rounded-lg border border-outline-variant px-4 py-2 text-sm font-medium text-on-surface hover:bg-surface-container-low"
           >
-            Cancel & Discard
+            Cancel
           </button>
           <button
             onClick={handleLaunch}
