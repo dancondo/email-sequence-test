@@ -113,6 +113,16 @@ class WebhookService:
         if already_exists:
             return
 
+        # Skip recording if candidate already replied — their pending
+        # messages were canceled, so this is a stale delivery webhook.
+        terminal = {
+            SequenceRunCandidateStatus.REPLIED,
+            SequenceRunCandidateStatus.INTERESTED,
+            SequenceRunCandidateStatus.NOT_INTERESTED,
+        }
+        if src.status in terminal:
+            return
+
         # Backfill thread_id on the original EMAIL_SCHEDULED event so future
         # inbound replies on this thread can be matched to the candidate.
         if message.thread_id:

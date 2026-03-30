@@ -281,6 +281,27 @@ async def test_process_message_created_no_thread_id(webhook_service):
     run_svc.record_email_sent.assert_awaited_once()
 
 
+async def test_process_message_created_skipped_when_candidate_terminal(webhook_service):
+    run_svc = webhook_service._mock_run_service
+    run_svc.has_event.return_value = False
+    src = make_sequence_run_candidate(status=SequenceRunCandidateStatus.INTERESTED)
+    notification = WebhookNotification(
+        trigger_type="message.created", grant_id="g1", message_id="m1"
+    )
+    message = ParsedReply(
+        external_message_id="m1",
+        thread_id="thr_1",
+        from_email="r@company.com",
+        subject="Follow up",
+        body="Following up",
+        received_at="2025-01-01",
+    )
+
+    await webhook_service._process_message_created(src, notification, message)
+
+    run_svc.record_email_sent.assert_not_awaited()
+
+
 # ── _classify_reply ──────────────────────────────────────────────────────
 
 async def test_classify_reply_success(
