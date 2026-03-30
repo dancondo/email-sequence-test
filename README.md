@@ -190,10 +190,15 @@ make migration           # Create a new Alembic migration
 
 ## What I Would Do Next (2–3 More Days)
 
-- **Re-evaluate indexes** — Ideally by monitoring query performance in production with real usage patterns, then adding targeted indexes where needed.
-- **Partition tables** — As event and candidate data grows, partition `sequence_run_candidate_event` and related tables for query performance.
-- **Async event processing** — Replace synchronous webhook handling with an event-driven architecture (e.g., message queue), especially for the classification step which involves an external API call.
+- **Robust error handling** — Add a global FastAPI exception handler for consistent error responses, wrap external API calls (Nylas, OpenAI) with retry logic and typed exceptions, add an Axios response interceptor and React error boundary on the frontend, and surface failures to the user with toast notifications instead of silent logs.
+- **Pagination** — Add cursor-based pagination to all list endpoints for production-scale data volumes.
 - **Eval system** — Let recruiters rate LLM classifications as correct or incorrect. Inject past examples of what went right or wrong into the classification prompt as few-shot context, so the model evolves over time without needing fine-tuning or a complex feedback pipeline.
 - **Run completion & background jobs** — Runs currently never auto-complete. Add configurable rules (e.g., auto-close after all steps sent + N minutes with no reply) enforced by a background job worker (e.g., BullMQ). This same job infrastructure would also let us replace Nylas's built-in scheduler with a home-grown one, giving full control over pausing, canceling, and retrying sequences.
+
+## Additional Features
+
+- **Async event processing** — Replace synchronous webhook handling with an event-driven architecture (e.g., message queue), especially for the classification step which involves an external API call.
 - **E2E tests with Testcontainers** — The app depends on multiple external providers (Nylas, OpenAI, PostgreSQL), making manual testing brittle. For a production-ready repo with frequent deploys, E2E tests using Testcontainers (spinning up real Postgres, mocked provider endpoints) would be essential to catch regressions before they ship.
-- **Pagination** — Add cursor-based pagination to all list endpoints for production-scale data volumes.
+- **Re-evaluate indexes** — Ideally by monitoring query performance in production with real usage patterns, then adding targeted indexes where needed.
+- **Partition tables** — As event and candidate data grows, partition `sequence_run_candidate_event` and related tables for query performance.
+- **Prompt Versioning & Registry** - Right now the prompts are likely hardcoded in the service. I'd move them to a dedicated registry or an external file so PMs or recruiters could tweak the "Sentiment" prompts without needing a full backend deployment.
