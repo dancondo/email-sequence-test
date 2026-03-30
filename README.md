@@ -205,7 +205,7 @@ make migration           # Create a new Alembic migration
 - **Dynamic template variables** — Support variables like `{{ candidate.name }}` or `{{ company }}` in email subject and body, resolved at send time from candidate data.
 - **Run completion & background jobs** — Runs currently never auto-complete. Add configurable rules (e.g., auto-close after all steps sent + N minutes with no reply) enforced by a background job worker (e.g., BullMQ). This same job infrastructure would also let us replace Nylas's built-in scheduler with a home-grown one, giving full control over pausing, canceling, and retrying sequences.
 
-## Additional Features
+## Additional Features Roadmap
 
 - **Async event processing** — Replace synchronous webhook handling with an event-driven architecture (e.g., message queue), especially for the classification step which involves an external API call.
 - **E2E tests with Testcontainers** — The app depends on multiple external providers (Nylas, OpenAI, PostgreSQL), making manual testing brittle. For a production-ready repo with frequent deploys, E2E tests using Testcontainers (spinning up real Postgres, mocked provider endpoints) would be essential to catch regressions before they ship.
