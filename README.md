@@ -165,6 +165,14 @@ make migrate
 | Backend API docs | http://localhost:9090/docs |
 | PostgreSQL | localhost:9432 |
 
+### Running Tests
+
+```bash
+make test                # Run all tests (backend + frontend)
+make test-backend        # Run backend tests only (pytest)
+make test-frontend       # Run frontend tests only (vitest)
+```
+
 ### Other Commands
 
 ```bash
@@ -185,6 +193,7 @@ make migration           # Create a new Alembic migration
 - **Webhooks over events.** Nylas webhook integration was chosen over event-based approaches for development velocity. This is a pilot — real-world volume data will inform whether a more robust async event processing pipeline is needed.
 - **Scheduling delegated to Nylas.** Email scheduling uses Nylas's built-in scheduling rather than a custom job queue. This simplifies implementation but makes it harder to pause or cancel sequences mid-flight.
 - **Days treated as minutes.** Per the assignment spec, time delays in sequences use minutes instead of days for faster testing.
+- **Sequence as template, run as snapshot.** A Sequence acts as a reusable template. When a SequenceRun starts, a snapshot of the Sequence is copied so that edits to the original Sequence do not affect in-flight runs.
 
 ---
 
@@ -193,6 +202,7 @@ make migration           # Create a new Alembic migration
 - **Robust error handling** — Add a global FastAPI exception handler for consistent error responses, wrap external API calls (Nylas, OpenAI) with retry logic and typed exceptions, add an Axios response interceptor and React error boundary on the frontend, and surface failures to the user with toast notifications instead of silent logs.
 - **Pagination** — Add cursor-based pagination to all list endpoints for production-scale data volumes.
 - **Eval system** — Let recruiters rate LLM classifications as correct or incorrect. Inject past examples of what went right or wrong into the classification prompt as few-shot context, so the model evolves over time without needing fine-tuning or a complex feedback pipeline.
+- **Dynamic template variables** — Support variables like `{{ candidate.name }}` or `{{ company }}` in email subject and body, resolved at send time from candidate data.
 - **Run completion & background jobs** — Runs currently never auto-complete. Add configurable rules (e.g., auto-close after all steps sent + N minutes with no reply) enforced by a background job worker (e.g., BullMQ). This same job infrastructure would also let us replace Nylas's built-in scheduler with a home-grown one, giving full control over pausing, canceling, and retrying sequences.
 
 ## Additional Features

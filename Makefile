@@ -21,6 +21,18 @@ up-tunnel-build:
 down:
 	docker compose down
 
+# --- Tests ---
+
+test:
+	docker compose exec backend pytest
+	docker compose exec frontend npx vitest run
+
+test-backend:
+	docker compose exec backend pytest
+
+test-frontend:
+	docker compose exec frontend npx vitest run
+
 # --- Migrations ---
 
 migration:
