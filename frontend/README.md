@@ -21,23 +21,64 @@ frontend/
 │   │   └── client.ts           # Axios instance with base URL
 │   │
 │   ├── modules/                # Feature-based modules
-│   │   └── health/             # Health check module
-│   │       ├── api.ts          # API call functions
-│   │       ├── hooks.ts        # React Query hooks
-│   │       ├── types.ts        # TypeScript interfaces
-│   │       └── pages/          # Page components
-│   │           └── HealthPage.tsx
+│   │   ├── candidate-lists/    # Candidate list management
+│   │   │   ├── api.ts          # API call functions
+│   │   │   ├── hooks.ts        # React Query hooks
+│   │   │   └── types.ts        # TypeScript interfaces
+│   │   │
+│   │   ├── candidates/         # Candidate profiles & upload
+│   │   │   ├── api.ts
+│   │   │   ├── hooks.ts
+│   │   │   ├── types.ts
+│   │   │   ├── components/
+│   │   │   │   └── CandidateUpload.tsx
+│   │   │   └── pages/
+│   │   │       ├── CandidateInfoPage.tsx
+│   │   │       └── CandidateListPage.tsx
+│   │   │
+│   │   ├── email-integration/  # Nylas email connection
+│   │   │   ├── api.ts
+│   │   │   ├── hooks.ts
+│   │   │   ├── types.ts
+│   │   │   └── pages/
+│   │   │       └── SettingsPage.tsx
+│   │   │
+│   │   ├── health/             # Health check
+│   │   │   ├── api.ts
+│   │   │   ├── hooks.ts
+│   │   │   ├── types.ts
+│   │   │   └── pages/
+│   │   │       └── HealthPage.tsx
+│   │   │
+│   │   ├── sequence-runs/      # Sequence run tracking
+│   │   │   ├── api.ts
+│   │   │   ├── hooks.ts
+│   │   │   ├── types.ts
+│   │   │   ├── components/
+│   │   │   │   ├── SelectCandidatesModal.tsx
+│   │   │   │   └── UploadCsvModal.tsx
+│   │   │   └── pages/
+│   │   │       ├── CandidateTimelinePage.tsx
+│   │   │       ├── DraftSequenceRunDetailPage.tsx
+│   │   │       ├── SequenceRunDetailPage.tsx
+│   │   │       └── SequenceRunsPage.tsx
+│   │   │
+│   │   └── sequences/          # Email sequence CRUD
+│   │       ├── api.ts
+│   │       ├── hooks.ts
+│   │       ├── types.ts
+│   │       └── pages/
+│   │           ├── SequenceDetailPage.tsx
+│   │           ├── SequenceEditorPage.tsx
+│   │           └── SequenceListPage.tsx
 │   │
 │   ├── providers/              # Global contexts & state
 │   │   ├── index.tsx           # Combined master provider
 │   │   └── query-provider.tsx  # React Query client & config
 │   │
 │   ├── routes/                 # Decoupled routing
-│   │   ├── index.tsx           # AppRouter component
+│   │   ├── index.tsx           # AppRouter + NavBar component
 │   │   └── paths.ts            # Route constant strings
-│   │
-│   ├── shared/                 # Common UI components
-│   │   └── components/         # Reusable UI (Button, Input, etc.)
 │   │
 │   ├── App.tsx                 # Wraps Providers + Router
 │   ├── main.tsx                # DOM mount point
@@ -66,3 +107,12 @@ npm run dev
 | Path | Component | Description |
 |------|-----------|-------------|
 | `/health` | HealthPage | System health check display |
+| `/settings` | SettingsPage | Nylas email integration setup |
+| `/candidates` | CandidateListPage | Browse all candidates |
+| `/candidates/:id` | CandidateInfoPage | Candidate profile detail |
+| `/sequences` | SequenceListPage | Browse all sequences (default route) |
+| `/sequences/new` | SequenceEditorPage | Create a new sequence |
+| `/sequences/:id` | SequenceDetailPage | Sequence detail & runs |
+| `/sequences/:id/edit` | SequenceEditorPage | Edit an existing sequence |
+| `/sequences/:id/runs/:runId` | SequenceRunDetailPage | Sequence run detail & candidates |
+| `/sequences/:id/runs/:runId/candidates/:candidateId/timeline` | CandidateTimelinePage | Candidate email timeline within a run |
