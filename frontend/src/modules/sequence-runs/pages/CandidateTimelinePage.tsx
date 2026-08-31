@@ -4,6 +4,7 @@ import { useCandidateTimeline, useSendReply } from "../hooks";
 import { PATHS } from "@/routes/paths";
 import { EventType, SequenceRunCandidateEvent } from "../types";
 import { RichTextEditor } from "@/shared/components/RichTextEditor";
+import { sanitizeHtml } from "@/shared/utils/sanitize";
 
 const EVENT_STYLES: Record<EventType, { bg: string; dot: string; label: string }> = {
   enrolled: { bg: "bg-gray-50", dot: "bg-gray-400", label: "Enrolled" },
@@ -61,7 +62,7 @@ function EventMetadata({ event }: { event: SequenceRunCandidateEvent }) {
         )}
         {body && (
           <div className="mt-1 rounded border border-gray-200 bg-white p-2 text-gray-600">
-            <div dangerouslySetInnerHTML={{ __html: body }} />
+            <div dangerouslySetInnerHTML={{ __html: sanitizeHtml(body) }} />
           </div>
         )}
       </div>
@@ -110,7 +111,7 @@ function EventMetadata({ event }: { event: SequenceRunCandidateEvent }) {
         )}
         {body && (
           <div className="mt-1 rounded border border-gray-200 bg-white p-2 text-gray-600">
-            <div dangerouslySetInnerHTML={{ __html: body }} />
+            <div dangerouslySetInnerHTML={{ __html: sanitizeHtml(body) }} />
           </div>
         )}
       </div>
@@ -128,7 +129,7 @@ function EventMetadata({ event }: { event: SequenceRunCandidateEvent }) {
         )}
         {body && (
           <div className="mt-1 rounded border border-gray-200 bg-white p-2 text-gray-600">
-            <div dangerouslySetInnerHTML={{ __html: body }} />
+            <div dangerouslySetInnerHTML={{ __html: sanitizeHtml(body) }} />
           </div>
         )}
       </div>
@@ -191,7 +192,7 @@ function EventMetadata({ event }: { event: SequenceRunCandidateEvent }) {
         )}
         {body && (
           <div className="mt-1 rounded border border-gray-200 bg-white p-2 text-gray-600">
-            <div dangerouslySetInnerHTML={{ __html: body }} />
+            <div dangerouslySetInnerHTML={{ __html: sanitizeHtml(body) }} />
           </div>
         )}
       </div>
